@@ -6,7 +6,7 @@ file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.1.0] - Unreleased
+## [1.1.0] - 2026-10-08
 
 Initial release, at parity with the WarpLink iOS, Android, and React Native
 SDKs at 1.1.0. Each tap delivers once, at most once, and one `onLink` callback
