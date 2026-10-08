@@ -1,0 +1,76 @@
+# pub.dev cannot publish the first version of a package through automated
+# publishing. Publish 1.1.0 once by hand with `flutter pub publish`, then
+# enable automated publishing on the package admin page for this repository
+# with the tag pattern v{{version}}. Every later tag push publishes from this
+# workflow. The one-time steps are in RELEASING.md.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing git tag to create a GitHub Release for (e.g. v1.1.0). Does NOT re-publish to pub.dev.'
+        required: true
+        type: string
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    # The OIDC token below replaces a stored pub.dev token, so no pub.dev
+    # secret lives in this repository.
+    permissions:
+      contents: write # create the GitHub Release for the tag
+      id-token: write # mint the OIDC token pub.dev verifies
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: refs/tags/${{ inputs.tag || github.ref_name }}
+      - name: Refuse a ref that is not an existing v* tag
+        env:
+          TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          case "$TAG" in
+            v[0-9]*) ;;
+            *) echo "$TAG is not a v* version tag"; exit 1 ;;
+          esac
+          git rev-parse --verify --quiet "refs/tags/$TAG" > /dev/null || { echo "tag $TAG does not exist"; exit 1; }
+      # A refusal here is the guard working. Re-running this workflow through
+      # workflow_dispatch for a historical tag fails when the pins on that
+      # commit do not match it.
+      - name: Refuse a tag the version and native pins do not match
+        env:
+          TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          PUBSPEC="$(sed -n 's/^version: *\([^ ]*\).*/\1/p' pubspec.yaml)"
+          CONSTANT="$(sed -n "s/.*warplinkFlutterVersion = '\([^']*\)'.*/\1/p" lib/src/version.dart)"
+          ANDROID="$(sed -n 's/.*implementation("app\.warplink:sdk:\([^"]*\)").*/\1/p' android/build.gradle.kts)"
+          IOS="$(sed -n 's/.*warplink-ios-sdk\.git", from: *"\([^"]*\)".*/\1/p' ios/warplink_flutter/Package.swift)"
+          test -n "$PUBSPEC" || { echo "version not found in pubspec.yaml"; exit 1; }
+          test -n "$CONSTANT" || { echo "warplinkFlutterVersion not found in lib/src/version.dart"; exit 1; }
+          test -n "$ANDROID" || { echo "app.warplink:sdk pin not found in android/build.gradle.kts"; exit 1; }
+          test -n "$IOS" || { echo "iOS SDK floor not found in ios/warplink_flutter/Package.swift"; exit 1; }
+          test "v$PUBSPEC" = "$TAG" || { echo "pubspec.yaml is version $PUBSPEC but the tag is $TAG"; exit 1; }
+          test "v$CONSTANT" = "$TAG" || { echo "lib/src/version.dart is $CONSTANT but the tag is $TAG"; exit 1; }
+          test "v$ANDROID" = "$TAG" || { echo "android/build.gradle.kts pins app.warplink:sdk:$ANDROID but the tag is $TAG"; exit 1; }
+          test "v$IOS" = "$TAG" || { echo "Package.swift floors the iOS package at $IOS but the tag is $TAG"; exit 1; }
+      - uses: dart-lang/setup-dart@v1
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
+      # Publishing only runs for a real tag push. A manual dispatch is
+      # release-only: the version is already on pub.dev and is immutable.
+      - if: github.event_name == 'push'
+        run: flutter pub publish --dry-run
+      - if: github.event_name == 'push'
+        run: flutter pub publish --force
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ inputs.tag || github.ref_name }}
+          generate_release_notes: true

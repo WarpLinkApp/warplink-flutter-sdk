@@ -1,0 +1,14 @@
+{
+  "pins" : [
+    {
+      "identity" : "warplink-ios-sdk",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/WarpLinkApp/warplink-ios-sdk.git",
+      "state" : {
+        "revision" : "5172036e0d5007451b8e88a57e920724ed27ab70",
+        "version" : "1.1.0"
+      }
+    }
+  ],
+  "version" : 2
+}
