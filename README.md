@@ -40,15 +40,17 @@ Three edits, all of them configuration. No native code.
 In Xcode, open the Runner target, go to **Signing & Capabilities**, add **Associated Domains**, and add:
 
 ```text
-applinks:aplnk.to
+applinks:yourapp.aplnk.to
 ```
+
+Find your app's subdomain in the dashboard: open the app, then **Settings**. Every app has its own link host, `{handle}.aplnk.to`. Add that exact host, never a wildcard such as `applinks:*.aplnk.to`. If your app existed before subdomains, or its links live on `aplnk.to`, also keep `applinks:aplnk.to` listed.
 
 Or add it to `ios/Runner/Runner.entitlements`:
 
 ```xml
 <key>com.apple.developer.associated-domains</key>
 <array>
-    <string>applinks:aplnk.to</string>
+    <string>applinks:yourapp.aplnk.to</string>
 </array>
 ```
 
@@ -73,15 +75,17 @@ Add an `autoVerify` intent filter inside your main `<activity>` in `android/app/
     <action android:name="android.intent.action.VIEW" />
     <category android:name="android.intent.category.DEFAULT" />
     <category android:name="android.intent.category.BROWSABLE" />
-    <data android:scheme="https" android:host="aplnk.to" />
+    <data android:scheme="https" android:host="yourapp.aplnk.to" />
 </intent-filter>
 ```
+
+Use your app's own subdomain as the host. If your app existed before subdomains, or its links live on `aplnk.to`, add a second `<data>` host line for `aplnk.to` in the same filter (or a second intent filter).
 
 Keep the `android:launchMode="singleTop"` value that `flutter create` writes. No `MainActivity` code is needed.
 
 ### Flutter's own deep-linking flag
 
-Flutter has its own deep link handler, enabled by default. Switch it off so your router does not also receive `https://aplnk.to/<slug>` as a route, and let `onLink` drive navigation.
+Flutter has its own deep link handler, enabled by default. Switch it off so your router does not also receive `https://yourapp.aplnk.to/<slug>` as a route, and let `onLink` drive navigation.
 
 iOS, in `ios/Runner/Info.plist`:
 
@@ -177,7 +181,7 @@ A background deferred check that fails, for example on a launch with no network,
 
 ### Using a custom link domain
 
-`aplnk.to` works out of the box. If your links are on your own domain, declare it so the SDK recognizes it on the very first launch, before it has fetched your domain list and even with no network:
+`aplnk.to` works without `linkDomains`. On iOS, the Flutter plugin also recognizes `{handle}.aplnk.to` before configuration. On Android, declare your app host in `linkDomains` for a first launch without network access. If your links are on your own domain, declare it too, so the SDK recognizes it on the very first launch, before it has fetched your domain list and even with no network:
 
 ```dart
 await WarpLink.configure(

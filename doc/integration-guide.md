@@ -63,14 +63,16 @@ There is no Podfile change and no `pod install` step. Android links automaticall
 2. Select the **Runner** target
 3. Go to **Signing & Capabilities**
 4. Click **+ Capability** and add **Associated Domains**
-5. Add the domain: `applinks:aplnk.to`
+5. Add the domain: `applinks:yourapp.aplnk.to`
+
+Find your app's subdomain in the dashboard: open the app, then **Settings**. Every app has its own link host, `{handle}.aplnk.to`. Add that exact host, never a wildcard such as `applinks:*.aplnk.to`. If your app existed before subdomains, or its links live on `aplnk.to`, also keep `applinks:aplnk.to` listed.
 
 If you manage entitlements by hand, add this to `ios/Runner/Runner.entitlements`:
 
 ```xml
 <key>com.apple.developer.associated-domains</key>
 <array>
-    <string>applinks:aplnk.to</string>
+    <string>applinks:yourapp.aplnk.to</string>
 </array>
 ```
 
@@ -112,9 +114,11 @@ Add this inside your main `<activity>` in `android/app/src/main/AndroidManifest.
     <action android:name="android.intent.action.VIEW" />
     <category android:name="android.intent.category.DEFAULT" />
     <category android:name="android.intent.category.BROWSABLE" />
-    <data android:scheme="https" android:host="aplnk.to" />
+    <data android:scheme="https" android:host="yourapp.aplnk.to" />
 </intent-filter>
 ```
+
+Use your app's own subdomain as the host. If your app existed before subdomains, or its links live on `aplnk.to`, add a second `<data>` host line for `aplnk.to` in the same filter (or a second intent filter).
 
 ### Launch mode
 
@@ -140,7 +144,7 @@ Copy the **SHA256** fingerprint and add it to your app registration in the WarpL
 
 ## Step 7: Decide on Flutter's deep-linking flag
 
-Flutter has its own deep link handler. When it is enabled, Flutter also forwards `https://aplnk.to/<slug>` to your router as a route. On Android cold start the route can reach the router without its host, so the router cannot tell a WarpLink URL from any other path. Apps on `go_router` or `Navigator` 2 then show an "unknown route" page next to the WarpLink delivery.
+Flutter has its own deep link handler. When it is enabled, Flutter also forwards `https://yourapp.aplnk.to/<slug>` to your router as a route. On Android cold start the route can reach the router without its host, so the router cannot tell a WarpLink URL from any other path. Apps on `go_router` or `Navigator` 2 then show an "unknown route" page next to the WarpLink delivery.
 
 Switch Flutter's handler off and let `onLink` drive navigation.
 
@@ -248,7 +252,7 @@ See the [API Reference](api-reference.md#configure) for every parameter.
 
 ### Using a custom link domain
 
-Skip this if all your links are on `aplnk.to`.
+Skip this if all your links are on `aplnk.to`. On Android, declare your app's `{handle}.aplnk.to` host for a first launch without network access.
 
 The SDK recognizes `aplnk.to` from the start and fetches your verified custom domains in the background. That fetch is a network round trip, and a link that opens your app has to be identified as yours right then. On a first launch, or any launch that starts offline, the fetched list is not there yet and a link on your custom domain is passed back unresolved.
 
@@ -368,7 +372,7 @@ See [Deferred Deep Links](deferred-deep-links.md) for confidence scores and edge
 2. Click **Create Link**
 3. Set the destination URL (for example, `https://yourapp.com/product/123`)
 4. Optionally set an iOS deep link URL and/or Android deep link URL
-5. Copy the generated short link (for example, `https://aplnk.to/abc123`)
+5. Copy the generated short link (for example, `https://yourapp.aplnk.to/abc123`)
 
 ### Via API
 
@@ -405,7 +409,7 @@ You can fire a link at a running emulator without a browser:
 
 ```bash
 adb shell am start -a android.intent.action.VIEW \
-  -c android.intent.category.BROWSABLE -d "https://aplnk.to/abc123"
+  -c android.intent.category.BROWSABLE -d "https://yourapp.aplnk.to/abc123"
 ```
 
 ### Testing Deferred Deep Links
@@ -421,8 +425,8 @@ adb shell am start -a android.intent.action.VIEW \
 - **iOS:** check the Xcode console for `[WarpLink]` prefixed messages
 - **Android:** run `adb logcat -s WarpLink`
 - Check the native version in use: `await WarpLink.sdkVersion()`
-- Verify AASA is served correctly: `curl https://aplnk.to/.well-known/apple-app-site-association`
-- Verify assetlinks.json: `curl https://aplnk.to/.well-known/assetlinks.json`
+- Verify AASA is served correctly: `curl https://yourapp.aplnk.to/.well-known/apple-app-site-association`
+- Verify assetlinks.json: `curl https://yourapp.aplnk.to/.well-known/assetlinks.json`
 - See [Troubleshooting](troubleshooting.md) for common issues
 
 ## Next Steps

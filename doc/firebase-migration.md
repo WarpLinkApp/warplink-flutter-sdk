@@ -9,7 +9,7 @@ Firebase Dynamic Links was deprecated on August 25, 2025. This guide walks you t
 | Dynamic Links | Links |
 | Firebase console | [WarpLink dashboard](https://warplink.app) |
 | `firebase_dynamic_links` | `warplink_flutter` |
-| `yourapp.page.link` domain | `aplnk.to` domain |
+| `yourapp.page.link` domain | `{handle}.aplnk.to` app domain |
 | `FirebaseDynamicLinks.instance` | `WarpLink` (static class) |
 | Link parameters (social metadata, analytics) | Link fields (destination, deep link URL, custom params) |
 | Firebase Analytics integration | WarpLink attribution |

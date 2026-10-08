@@ -8,7 +8,7 @@ Common issues and solutions when integrating the WarpLink Flutter SDK.
 
 ### Check the Associated Domains entitlement
 
-Verify `applinks:aplnk.to` is listed in your Runner target under **Signing & Capabilities** > **Associated Domains**, and in the built `Runner.entitlements`. Without it iOS never offers the link to your app.
+Verify `applinks:yourapp.aplnk.to` (your app's own link host, and `applinks:aplnk.to` too if your links live on the apex) is listed in your Runner target under **Signing & Capabilities** > **Associated Domains**, and in the built `Runner.entitlements`. Without it iOS never offers the link to your app.
 
 ### Your own delegate does not call super
 
@@ -33,7 +33,7 @@ If you combine results from several handlers, store each result in a local first
 Your iOS app must be registered in the WarpLink dashboard (**Apps**) with the correct bundle ID and team ID. Verify the AASA file:
 
 ```bash
-curl -s https://aplnk.to/.well-known/apple-app-site-association | python3 -m json.tool
+curl -s https://yourapp.aplnk.to/.well-known/apple-app-site-association | python3 -m json.tool
 ```
 
 Look for your bundle ID and team ID in the `applinks.details` array.
@@ -48,7 +48,7 @@ Verify that the **Associated Domains** capability is enabled for your App ID in 
 
 ### Domain mismatch
 
-The SDK recognizes `aplnk.to` plus your organization's verified custom domains, which it fetches at `configure` and caches for offline launches. A URL on any other host returns `E_INVALID_URL`. If you test a custom domain, confirm it is verified and live in the dashboard and listed in your Associated Domains entitlement (`applinks:go.yourbrand.com`), or iOS will not open your app for it.
+The plugin recognizes `aplnk.to` and your app's `{handle}.aplnk.to` host on iOS. Android learns the app host during validation, or from a local domain declaration. The SDK also recognizes your organization's verified custom domains, which it fetches at `configure` and caches for offline launches. A URL on any other host returns `E_INVALID_URL`. If you test a custom domain, confirm it is verified and live in the dashboard and listed in your Associated Domains entitlement (`applinks:go.yourbrand.com`), or iOS will not open your app for it.
 
 If it only fails on the first launch after install, or with no network, the fetch had not completed when the link arrived. Declare the domain locally: `linkDomains: ['go.yourbrand.com']`, a `WarpLinkDomains` array in `Info.plist`, or an `app.warplink.DOMAINS` manifest entry on Android. See [Custom link domains](api-reference.md#custom-link-domains).
 
@@ -83,7 +83,7 @@ If cold-start links work but tapping a link while the app is running does nothin
 ### Check assetlinks.json
 
 ```bash
-curl -s https://aplnk.to/.well-known/assetlinks.json | python3 -m json.tool
+curl -s https://yourapp.aplnk.to/.well-known/assetlinks.json | python3 -m json.tool
 ```
 
 Look for your package name and SHA256 fingerprint.
@@ -121,7 +121,7 @@ adb shell pm verify-app-links --re-verify com.yourcompany.yourapp
 
 **Symptoms:** Tapping a WarpLink URL opens your app, `onLink` fires, and your router also shows an "unknown route" or "page not found" screen for the slug.
 
-Flutter's own deep link handler is enabled by default and forwards `https://aplnk.to/<slug>` to your router as a route. Switch it off: set `FlutterDeepLinkingEnabled` to `false` in `Info.plist`, and `flutter_deeplinking_enabled` to `false` in the manifest. Then navigate from `onLink`. See [Routing with go_router](go-router.md).
+Flutter's own deep link handler is enabled by default and forwards `https://yourapp.aplnk.to/<slug>` to your router as a route. Switch it off: set `FlutterDeepLinkingEnabled` to `false` in `Info.plist`, and `flutter_deeplinking_enabled` to `false` in the manifest. Then navigate from `onLink`. See [Routing with go_router](go-router.md).
 
 ---
 
