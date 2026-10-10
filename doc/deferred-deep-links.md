@@ -93,7 +93,7 @@ The match confidence depends on the matching method and the time elapsed since t
 
 | Scenario | Confidence | Match Type |
 |----------|------------|------------|
-| IDFV re-engagement (iOS, app was previously installed) | 1.0 | `deterministic` |
+| IDFV repeat check (iOS, app was previously installed) | The stored install's own score | The stored install's own type |
 | Play Install Referrer (Android) | 1.0 | `deterministic` |
 | Fingerprint, < 1 hour since click | 0.85 | `probabilistic` |
 | Fingerprint, < 3 hours since click | 0.65 | `probabilistic` |
@@ -115,7 +115,7 @@ The window is short on purpose. The fingerprint key is a network, not a device: 
 
 ### iOS
 
-- **Deterministic matching:** IDFV (Identifier for Vendor), for re-engagement when the app was previously installed. No ATT prompt needed.
+- **IDFV repeat check:** IDFV (Identifier for Vendor) recognizes an install asking again when the app was previously installed, and returns that install with its own match type and confidence. It never produces a guaranteed match. No ATT prompt needed.
 - **Probabilistic matching:** Fingerprint (IP + preferred language + timezone, hashed server-side). Used for first-time installs.
 - **No IDFA.** The SDK does not use IDFA and does not trigger App Tracking Transparency prompts.
 

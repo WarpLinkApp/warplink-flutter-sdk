@@ -115,7 +115,7 @@ abstract final class WarpLink {
     return raw == null ? null : AttributionResult.fromMap(raw);
   }
 
-  /// The version the native SDK reports, for example `1.1.0`.
+  /// The version the native SDK reports, for example `1.1.1`.
   ///
   /// This is the version sent on the wire, not the package version.
   static Future<String> sdkVersion() async {

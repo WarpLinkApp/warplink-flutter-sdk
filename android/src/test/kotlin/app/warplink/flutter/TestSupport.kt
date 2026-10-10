@@ -33,7 +33,7 @@ class TestClock(var now: Long = 1_000L) {
  * [held] until [finishHeld] delivers it.
  */
 class FakeSdk : NativeSdk {
-    override val sdkVersion = "1.1.0"
+    override val sdkVersion = "1.1.1"
     override var isConfigured = false
     override var attributionResult: WarpLinkDeepLink? = null
     var attributionComplete = false

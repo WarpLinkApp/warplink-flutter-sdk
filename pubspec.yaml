@@ -1,6 +1,6 @@
 name: warplink_flutter
 description: Deep linking, install attribution, and real-time link analytics for Flutter apps on iOS and Android, from one SDK.
-version: 1.1.0
+version: 1.1.1
 homepage: https://warplink.app
 repository: https://github.com/WarpLinkApp/warplink-flutter-sdk
 issue_tracker: https://github.com/WarpLinkApp/warplink-flutter-sdk/issues

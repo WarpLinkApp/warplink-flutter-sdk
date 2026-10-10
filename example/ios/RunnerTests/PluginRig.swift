@@ -10,7 +10,7 @@ final class FakeWarpLinkNative: WarpLinkNative, @unchecked Sendable {
     var isConfigured = false
     var isAttributionComplete = false
     var attributionResult: WarpLinkDeepLink?
-    var sdkVersion = "1.1.0"
+    var sdkVersion = "1.1.1"
     var knownHosts: Set<String> = ["aplnk.to"]
     var resolveResult: Result<WarpLinkDeepLink, WarpLinkError> = .failure(.linkNotFound)
     var deferredResult: Result<WarpLinkDeepLink?, WarpLinkError> = .success(nil)

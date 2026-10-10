@@ -125,7 +125,7 @@ static Future<bool> isWarpLinkUrl(String url)
 static Future<String> sdkVersion()
 ```
 
-The version the native SDK reports, for example `1.1.0`. This is the version sent on the wire, not the package version. The package constant is `warplinkFlutterVersion`.
+The version the native SDK reports, for example `1.1.1`. This is the version sent on the wire, not the package version. The package constant is `warplinkFlutterVersion`.
 
 #### `onDeepLink`
 
@@ -156,7 +156,7 @@ Takes the URL that launched the app, once, and resolves it. The second call retu
 | Name | Value | Description |
 |------|-------|-------------|
 | `defaultApiEndpoint` | `https://api.warplink.app/v1` | Default `apiEndpoint` |
-| `warplinkFlutterVersion` | `1.1.0` | Version of the Dart package |
+| `warplinkFlutterVersion` | `1.1.1` | Version of the Dart package |
 
 ## Types
 
@@ -227,7 +227,7 @@ The stored result of the install attribution check.
 enum MatchType { deterministic, probabilistic }
 ```
 
-`deterministic` matches by a stable identifier (IDFV or Play Install Referrer), has confidence 1.0, and is guaranteed. `probabilistic` matches by a device fingerprint and is a best guess. `wireValue` holds the lowercase string.
+`deterministic` matches by the Play Install Referrer on Android, has confidence 1.0, and is guaranteed. The iOS IDFV is a repeat check and never produces it. `probabilistic` matches by a device fingerprint and is a best guess. `wireValue` holds the lowercase string.
 
 > **Use `matchGuaranteed`, like `matchConfidence`, to pick a destination. It is not a credential.** A probabilistic match can name the wrong user. Authenticate the user and check authorization separately before showing private data or doing anything sensitive, guaranteed match or not.
 

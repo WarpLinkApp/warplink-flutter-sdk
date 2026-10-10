@@ -277,7 +277,7 @@ adb logcat -s WarpLink
 
 With `debugLogging: true`, the native SDK logs under the `WarpLink` tag:
 
-- `Configured with API key: <masked key>` and `WarpLink SDK configured (v1.1.0)`: the SDK initialized
+- `Configured with API key: <masked key>` and `WarpLink SDK configured (v1.1.1)`: the SDK initialized
 - `API key validated successfully`: the server accepted the key
 - `Resolving deep link: <slug>@<domain>` and `Deep link resolved: <linkId>`: a link was resolved
 - `First launch: collecting device signals`: the install check started
@@ -298,7 +298,7 @@ The Dart layer does not intercept native logs. The SDK only ever logs the masked
 
 ## 10. Version Questions
 
-`await WarpLink.sdkVersion()` returns the version the native SDK reports, which is also what appears on the wire. `warplinkFlutterVersion` is the version of the Dart package. They match at every release (1.1.0 for both).
+`await WarpLink.sdkVersion()` returns the version the native SDK reports, which is also what appears on the wire. `warplinkFlutterVersion` is the version of the Dart package. They match at every release (1.1.1 for both).
 
 ## Related Guides
 

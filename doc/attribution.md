@@ -10,21 +10,21 @@ The result is returned as an `AttributionResult` with `matchType`, `matchConfide
 
 ## Deterministic Matching
 
-Deterministic matching uses stable device identifiers that guarantee an exact match.
+Only the Play Install Referrer on Android is deterministic: the referrer names the link, so the match is guaranteed. The iOS IDFV is a repeat check, not an install match, and never produces a guaranteed match.
 
-### iOS: IDFV
+### iOS: IDFV repeat check
 
 **Used for:** Re-engagement, when the app is already installed or was previously installed on the same device.
 
 | Property | Value |
 |----------|-------|
 | Signal | IDFV (Identifier for Vendor) |
-| Match type | `deterministic` |
-| Confidence | 1.0 (exact match) |
+| Match type | The stored install's own match type (never upgraded) |
+| Confidence | The stored install's own confidence |
 | Requires ATT? | No |
 | Requires user permission? | No |
 
-IDFV is a UUID unique to the combination of your app's vendor and the device. It does not require any user permission and is **exempt from App Tracking Transparency (ATT)**. The SDK includes IDFV in attribution requests automatically.
+IDFV is a UUID unique to the combination of your app's vendor and the device. It does not require any user permission and is **exempt from App Tracking Transparency (ATT)**. The SDK includes IDFV in attribution requests automatically. If the server already holds an install for that IDFV, it returns that install with its own match type and confidence, so a fingerprint match stays a fingerprint match. It does not answer a reinstall the SDK reports as one; that install falls through to the fingerprint tier.
 
 ### Android: Play Install Referrer
 
@@ -89,7 +89,7 @@ Confidence decreases over time because IP addresses and network conditions chang
 
 The match window is server-side, set per link in the dashboard. It **defaults to 6 hours and cannot exceed 24**.
 
-The window is short on purpose. The fingerprint key is a network, not a device: an IP address, a normalized language, and a timezone. Every phone behind one NAT that shares a language and timezone lands in the same bucket, so each extra hour lets another stranger join it while adding almost no real matches. This governs the probabilistic tier only. The deterministic paths (IDFV on iOS, Play Install Referrer on Android) read stored click data instead of the fingerprint bucket, so the window does not apply to them.
+The window is short on purpose. The fingerprint key is a network, not a device: an IP address, a normalized language, and a timezone. Every phone behind one NAT that shares a language and timezone lands in the same bucket, so each extra hour lets another stranger join it while adding almost no real matches. This governs the probabilistic tier only. The Play Install Referrer on Android and the IDFV repeat check on iOS read stored data instead of the fingerprint bucket, so the window does not apply to them.
 
 ## Interpreting Match Results
 
@@ -110,7 +110,7 @@ if (attribution != null) {
 
 ### `matchGuaranteed` is not a credential
 
-`matchGuaranteed` is `true` only when the match came from a deterministic signal (IDFV on iOS, Play Install Referrer on Android). Use it, like `matchConfidence`, to pick the destination or personalize onboarding (for example, prefilling a referral code), not to authenticate the user. Attribution is not identity: never sign a user in, restore an account, or show personal data because of a match, guaranteed or not. Authenticate the user and check authorization separately. A probabilistic match is a best guess drawn from a network-shaped fingerprint, so even a high score can name the wrong user.
+`matchGuaranteed` is `true` only when the match came from a deterministic signal, which is the Play Install Referrer on Android. No first install on iOS is guaranteed, and the IDFV never upgrades a match. Use it, like `matchConfidence`, to pick the destination or personalize onboarding (for example, prefilling a referral code), not to authenticate the user. Attribution is not identity: never sign a user in, restore an account, or show personal data because of a match, guaranteed or not. Authenticate the user and check authorization separately. A probabilistic match is a best guess drawn from a network-shaped fingerprint, so even a high score can name the wrong user.
 
 ```dart
 if (attribution.matchGuaranteed) {
@@ -174,7 +174,7 @@ The WarpLink SDK is designed with privacy as a core principle.
 | Timezone name | Fingerprint component | Both |
 | Timezone offset | Fingerprint component (fallback key) | Both |
 | Reinstall flag (`is_reinstall`) | Routes a returning user back to the content they tapped, and separates reinstalls from first installs afterwards | Both |
-| IDFV | Deterministic matching (re-engagement) | iOS only |
+| IDFV | Repeat check (recognizing an install asking again) | iOS only |
 | Play Install Referrer | Deterministic matching (first install) | Android only |
 
 The IP address used in the fingerprint is derived server-side from the request. The SDK never sends a precomputed fingerprint or the device's IP.

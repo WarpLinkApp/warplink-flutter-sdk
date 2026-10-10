@@ -32,7 +32,7 @@ All methods are asynchronous. Native replies on the platform (main) thread. Argu
 | `getAttributionResult` | none | attribution map (section 3.2), or `null` for no match |
 | `isConfigured` | none | `bool` |
 | `isAttributionComplete` | none | `bool` |
-| `getSdkVersion` | none | `String`: the NATIVE SDK constant (`"1.1.0"`), never the pub package version |
+| `getSdkVersion` | none | `String`: the NATIVE SDK constant (`"1.1.1"`), never the pub package version |
 | `getPendingArrivals` | none | `List<Map>` of ledger entries, oldest first (section 4.3) |
 | `resolveArrival` | `{ "arrivalId": String }` | deep link map, or `null`. Claims the arrival; join semantics (section 4.4) |
 | `claimDelivery` | `{ "arrivalId": String }` | `bool`. `true` to the first claim only (section 4.5) |
@@ -262,7 +262,7 @@ Recipients are decided only inside handlers, from the current state, never from 
 
 ## 12. Accepted limitations
 
-1. **Process death mid-request.** "Never loses a tap" covers arrivals recorded during a live process. If the process dies after the server recorded a click and before the SDK got the answer, the pinned 1.1.0 native APIs accept no caller-supplied tap id, and the ledger is not persisted. A relaunch is a new launch with a new tap id, and may bill a second click.
+1. **Process death mid-request.** "Never loses a tap" covers arrivals recorded during a live process. If the process dies after the server recorded a click and before the SDK got the answer, the pinned 1.1.1 native APIs accept no caller-supplied tap id, and the ledger is not persisted. A relaunch is a new launch with a new tap id, and may bill a second click.
 2. **Crash between claim and delivery.** Dart claims before it delivers, so a crash, or a host `onLink` that throws before it navigates, after a `true` claim loses that one delivery. Native does not offer a delivered entry again. This is the price of at-most-once delivery.
 3. **Disposal while a claim is in flight or an answer is held.** Delivery is at most once. An engine disposal or a hot restart can lose a delivery in two cases. A delivery claim is in flight: the old runtime's claim may still win in native, and the old runtime drops its result silently. An answer is held: native granted its claim and the old runtime held it because no eligible recipient existed at delivery time, whether none had appeared yet or the last one had left. Native does not offer a claimed entry again, so the new runtime cannot deliver it.
 4. **iOS supersede is navigation parity.** The iOS public `handleDeepLink` always answers and cannot be cancelled, and its retries continue. Dart drops the stale answer, so the host sees one navigation, but the stale request can still complete and bill. Android's manual path shares the resolver and cancels older work. Request cancellation parity on iOS needs a public native resolve API with cancellation, a follow-up for a future native release.

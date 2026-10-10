@@ -6,6 +6,32 @@ file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2026-10-10
+
+The native SDK pins move to 1.1.1: iOS 1.1.1 (Swift Package Manager) and
+Android 1.1.1 (`app.warplink:sdk`). The Dart API does not change.
+
+### Changed
+
+- **Rate limits are retried once.** The native SDKs this package wraps now
+  retry a `429` from the link resolve or the attribution match once when its
+  `Retry-After` is 5 seconds or less (1 second when the header is unreadable). A
+  longer `Retry-After` is not retried. When the call still fails, it fails with
+  `WarpLinkServerException` and `statusCode` 429.
+
+### Clarification
+
+`matchGuaranteed` is not a credential. Use it, like a confidence threshold, to
+pick the destination the attribution result routes to. A probabilistic match is
+a best guess from a fingerprint shaped by the network rather than the device, so
+it can name the wrong user. Do not sign anyone in, or show personal data, on
+this flag. Authenticate the user and check authorization separately.
+
+On Android, a deterministic match comes from the Play Install Referrer. On iOS,
+the IDFV lookup returns the install the device already has, with that install's
+own match type and confidence. Neither lookup turns a probabilistic match into a
+guaranteed one.
+
 ## [1.1.0] - 2026-10-08
 
 Initial release, at parity with the WarpLink iOS, Android, and React Native

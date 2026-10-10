@@ -111,7 +111,7 @@ class ConfigureTest {
 
     @Test
     fun theReadMethodsPassTheNativeAnswersThrough() {
-        assertEquals("1.1.0", engine.call("getSdkVersion"))
+        assertEquals("1.1.1", engine.call("getSdkVersion"))
         assertEquals(false, engine.call("isConfigured"))
         assertEquals(false, engine.call("isAttributionComplete"))
         sdk.attributionComplete = true

@@ -272,7 +272,7 @@ The check runs once per install and the native SDK caches the result. Later call
 
 ### `matchGuaranteed` is not a credential
 
-`matchGuaranteed` is `true` only for a deterministic match (IDFV on iOS, Play Install Referrer on Android). A probabilistic match is a best guess drawn from a network-shaped fingerprint, so even a high score can name the wrong user.
+`matchGuaranteed` is `true` only for a deterministic match (the Play Install Referrer on Android; the iOS IDFV never produces one). A probabilistic match is a best guess drawn from a network-shaped fingerprint, so even a high score can name the wrong user.
 
 ```dart
 if (attribution.matchGuaranteed) {
