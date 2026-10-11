@@ -173,7 +173,7 @@ That is the whole happy path. `onLink` receives one delivery for every tap, and 
 
 An exception thrown by your `onLink` while `configure` delivers a rejected key or a configuration error propagates out of the future that `configure` returns. An exception thrown for a link that arrives later surfaces as an uncaught error and does not stop the SDK. That link is not delivered again.
 
-A background deferred check that fails, for example on a launch with no network, also reaches `onLink` as an `ErrorEvent`. The check stays open, so the next launch retries by itself. Treat the error as a report, not something to act on.
+A background deferred check that cannot finish, for example on a launch with no network, stays open and retries on the next launch.
 
 ### Getting your SDK key
 
@@ -246,12 +246,6 @@ The deferred check still fires without `onLink`, because that request is what at
 - **`getInitialDeepLink` and `onLink` do not overlap.** With the automatic path on, the launch link goes to `onLink` and `getInitialDeepLink()` returns `null`.
 - **Deferred installs** arrive through `onLink` with `isDeferred: true`, after the launch link has been delivered or dropped.
 
-### Known limits
-
-- Delivery is at most once. A process death or engine disposal while a tap's final step is in flight can lose that one delivery, and so can an `onLink` that throws before it navigates. The SDK never offers a delivered link again. If the process dies after the server recorded the click and before the app received the answer, the relaunch is a new launch and the click can be counted a second time.
-- On iOS, a newer tap supersedes an older one for navigation only. The older request still completes.
-- On iOS, another plugin that handles a cold-start link first can hide it from WarpLink. See [Another plugin handles links first](doc/troubleshooting.md#7-another-plugin-handles-links-first-ios).
-
 ## Deferred deep links and attribution
 
 Deferred deep links route a user who installs your app after tapping a link. With the default options the match arrives through `onLink` with `isDeferred: true`. To read it yourself:
@@ -270,19 +264,19 @@ if (attribution != null) {
 
 The check runs once per install and the native SDK caches the result. Later calls return the stored match, or `null` for a confirmed no-match. See [Deferred Deep Links](doc/deferred-deep-links.md) and [Attribution](doc/attribution.md).
 
-### `matchGuaranteed` is not a credential
+### Using `matchGuaranteed`
 
-`matchGuaranteed` is `true` only for a deterministic match (the Play Install Referrer on Android; the iOS IDFV never produces one). A probabilistic match is a best guess drawn from a network-shaped fingerprint, so even a high score can name the wrong user.
+`matchGuaranteed` is `true` for a deterministic match, such as the Play Install Referrer on Android. A probabilistic match carries a confidence score.
 
 ```dart
 if (attribution.matchGuaranteed) {
-  personalizeOnboarding(attribution.linkId); // a reliable hint, not an identity
+  personalizeOnboarding(attribution.linkId); // personalize onboarding
 } else {
-  showContent(attribution.linkId);           // route content, never identity
+  showContent(attribution.linkId);           // route content
 }
 ```
 
-Use `matchGuaranteed` to pick a destination or personalize onboarding, for example by prefilling a referral code. Attribution is not identity: never sign a user in or restore an account from it. Authenticate the user and check authorization separately before showing private data, guaranteed match or not.
+Use `matchGuaranteed` to pick a destination or personalize onboarding, for example by prefilling a referral code, and keep sign-in and private data on your own authentication.
 
 ## Error handling
 
