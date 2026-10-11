@@ -95,34 +95,34 @@ The match confidence depends on the matching method and the time elapsed since t
 |----------|------------|------------|
 | IDFV repeat check (iOS, app was previously installed) | The stored install's own score | The stored install's own type |
 | Play Install Referrer (Android) | 1.0 | `deterministic` |
-| Fingerprint, < 1 hour since click | 0.85 | `probabilistic` |
-| Fingerprint, < 3 hours since click | 0.65 | `probabilistic` |
-| Fingerprint, < 6 hours since click | 0.50 | `probabilistic` |
-| Fingerprint, < 24 hours since click | 0.30 | `probabilistic` |
+| Probabilistic match, < 1 hour since click | 0.85 | `probabilistic` |
+| Probabilistic match, < 3 hours since click | 0.65 | `probabilistic` |
+| Probabilistic match, < 6 hours since click | 0.50 | `probabilistic` |
+| Probabilistic match, < 24 hours since click | 0.30 | `probabilistic` |
 | 24 hours or more since click | no match | none |
 
-The fingerprint rows are the ceilings for the zone-name variant that an SDK collecting a zone name sends. Two multipliers then reduce whichever ceiling applied: 0.6 when more than one claimable click shared the fingerprint, and 0.6 / 0.9 / 1.0 for a carrier-grade-NAT, household-IPv4, or IPv6 click address. See [Attribution](attribution.md) for the full table.
+The probabilistic rows are the ceilings for the zone-name variant that an SDK collecting a zone name sends. Two multipliers then reduce whichever ceiling applied: 0.6 when more than one claimable click shared the match key, and 0.6 / 0.9 / 1.0 for a carrier-grade-NAT, household-IPv4, or IPv6 click address. See [Attribution](attribution.md) for the full table.
 
-**Recommendation:** Route to specific content when `matchConfidence` is above 0.5. Show generic onboarding when below 0.5. `matchGuaranteed` is `true` only for a deterministic match. Use it to pick the destination, not as a credential, since a probabilistic match is a best guess from a network-shaped fingerprint and can name the wrong user. Attribution is not identity. Authenticate the user and check authorization separately before anything sensitive.
+**Recommendation:** Route to specific content when `matchConfidence` is above 0.5. Show generic onboarding when below 0.5. `matchGuaranteed` is `true` only for a deterministic match. Use it to pick the destination, not as a credential, since a probabilistic match is a best guess from a network-shaped match key and can name the wrong user. Attribution is not identity. Authenticate the user and check authorization separately before anything sensitive.
 
 ## Match Window Configuration
 
 The match window controls how far back the server looks for matching clicks. It is **server-authoritative**, set per link in the WarpLink dashboard and enforced by the attribution API. It **defaults to 6 hours and cannot exceed 24**. There is no client-side setting to change it.
 
-The window is short on purpose. The fingerprint key is a network, not a device: an IP address, a normalized language, and a timezone. Every phone behind one NAT that shares a language and timezone lands in the same bucket, so each extra hour lets another stranger join it while adding almost no real matches. It governs the probabilistic tier only. The deterministic paths are unaffected.
+The window is short on purpose. The match key is a network, not a device: an IP address, a normalized language, and a timezone. Every phone behind one NAT that shares a language and timezone lands in the same bucket, so each extra hour lets another stranger join it while adding almost no real matches. It governs the probabilistic tier only. The deterministic paths are unaffected.
 
 ## Platform Differences
 
 ### iOS
 
 - **IDFV repeat check:** IDFV (Identifier for Vendor) recognizes an install asking again when the app was previously installed, and returns that install with its own match type and confidence. It never produces a guaranteed match. No ATT prompt needed.
-- **Probabilistic matching:** Fingerprint (IP + preferred language + timezone, hashed server-side). Used for first-time installs.
+- **Probabilistic matching:** Match key (IP + preferred language + timezone, hashed server-side). Used for first-time installs.
 - **No IDFA.** The SDK does not use IDFA and does not trigger App Tracking Transparency prompts.
 
 ### Android
 
 - **Deterministic matching:** Play Install Referrer. The Play Store passes the click referrer through the install process. This is the most accurate method (confidence 1.0).
-- **Probabilistic fallback:** If Play Install Referrer is unavailable (sideloaded app, Play Services missing), the SDK falls back to fingerprint matching (IP + preferred language + timezone).
+- **Probabilistic fallback:** If Play Install Referrer is unavailable (sideloaded app, Play Services missing), the SDK falls back to probabilistic matching (IP + preferred language + timezone).
 
 ## Code Example with Confidence Branching
 
@@ -179,7 +179,7 @@ Two separate native markers produce this, and neither is readable from Dart:
 
 ### Multiple Links Tapped Before Install
 
-A fingerprint is a network rather than a device, so several clicks can land under one key: your own user tapping twice, or two strangers behind the same NAT. WarpLink keeps them as a list, newest first, up to 10 per fingerprint. A second tap does not overwrite the first, so the install that belongs to the earlier tap can still find it.
+A match key is a network rather than a device, so several clicks can land under one key: your own user tapping twice, or two strangers behind the same NAT. WarpLink keeps them as a list, newest first, up to 10 per match key. A second tap does not overwrite the first, so the install that belongs to the earlier tap can still find it.
 
 The server matches against the newest entry your app is allowed to claim, and removes only that entry once it becomes an install. When more than one entry was claimable, the match is scored lower to reflect that the answer was picked from a set.
 

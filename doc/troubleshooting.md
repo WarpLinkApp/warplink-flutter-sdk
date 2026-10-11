@@ -176,9 +176,9 @@ Create an SDK key under **Keys** > **SDK keys** in the dashboard and pass it to 
 
 The default match window is 6 hours, and the ceiling is 24 hours. If the user installs the app after the window expires, no match is found. The window is set per link in the dashboard.
 
-### Fingerprint mismatch
+### Match key mismatch
 
-The user's network conditions may have changed between tapping the link and installing the app (VPN, different Wi-Fi network, carrier-grade NAT). This reduces fingerprint accuracy.
+The user's network conditions may have changed between tapping the link and installing the app (VPN, different Wi-Fi network, carrier-grade NAT). This reduces match accuracy.
 
 ### Not first launch
 
