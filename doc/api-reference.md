@@ -227,9 +227,9 @@ The stored result of the install attribution check.
 enum MatchType { deterministic, probabilistic }
 ```
 
-`deterministic` matches by the Play Install Referrer on Android, has confidence 1.0, and is guaranteed. The iOS IDFV is a repeat check and never produces it. `probabilistic` matches by a hashed match key and is a best guess. `wireValue` holds the lowercase string.
+`deterministic` matches by the Play Install Referrer on Android, has confidence 1.0, and is guaranteed. The iOS IDFV is a repeat check and never produces it. `probabilistic` matches by a hashed match key built from the IP address and language, with time zone when available. `matchGuaranteed` is false for probabilistic matches. `wireValue` holds the lowercase string.
 
-> **Use `matchGuaranteed`, like `matchConfidence`, to pick a destination. It is not a credential.** A probabilistic match can name the wrong user. Authenticate the user and check authorization separately before showing private data or doing anything sensitive, guaranteed match or not.
+> **Use `matchGuaranteed`, like `matchConfidence`, to pick a destination. It is not a credential.** A probabilistic match comes from a hashed match key built from the IP address and language, with time zone when available. Use it to route the user, not to identify them. Authenticate the user and check authorization separately before showing private data or doing anything sensitive, guaranteed match or not.
 
 ## Error Types
 

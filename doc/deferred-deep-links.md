@@ -103,7 +103,7 @@ The match confidence depends on the matching method and the time elapsed since t
 
 The probabilistic rows are the ceilings for the zone-name variant that an SDK collecting a zone name sends. Two multipliers then reduce whichever ceiling applied: 0.6 when more than one claimable click shared the match key, and 0.6 / 0.9 / 1.0 for a carrier-grade-NAT, household-IPv4, or IPv6 click address. See [Attribution](attribution.md) for the full table.
 
-**Recommendation:** Route to specific content when `matchConfidence` is above 0.5. Show generic onboarding when below 0.5. `matchGuaranteed` is `true` only for a deterministic match. Use it to pick the destination, not as a credential, since a probabilistic match is a best guess from a network-shaped match key and can name the wrong user. Attribution is not identity. Authenticate the user and check authorization separately before anything sensitive.
+**Recommendation:** Route to specific content when `matchConfidence` is above 0.5. Show generic onboarding when below 0.5. `matchGuaranteed` is `true` only for a deterministic match. Use it to pick the destination, not as a credential, since a probabilistic match comes from a hashed match key built from the IP address and language, with time zone when available. Use it to route the user, not to identify them. Attribution is not identity. Authenticate the user and check authorization separately before anything sensitive.
 
 ## Match Window Configuration
 

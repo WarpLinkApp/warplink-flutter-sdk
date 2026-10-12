@@ -5,7 +5,8 @@ enum MatchType {
   /// Confidence is always 1.0 and the match is guaranteed.
   deterministic('deterministic'),
 
-  /// Matched by a device fingerprint. This is a best guess and can be wrong.
+  /// Matched by probabilistic matching on a hashed match key built from the IP
+  /// address and language, with time zone when available.
   probabilistic('probabilistic');
 
   const MatchType(this.wireValue);

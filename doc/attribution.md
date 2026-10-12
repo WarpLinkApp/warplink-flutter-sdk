@@ -110,7 +110,7 @@ if (attribution != null) {
 
 ### `matchGuaranteed` is not a credential
 
-`matchGuaranteed` is `true` only when the match came from a deterministic signal, which is the Play Install Referrer on Android. No first install on iOS is guaranteed, and the IDFV never upgrades a match. Use it, like `matchConfidence`, to pick the destination or personalize onboarding (for example, prefilling a referral code), not to authenticate the user. Attribution is not identity: never sign a user in, restore an account, or show personal data because of a match, guaranteed or not. Authenticate the user and check authorization separately. A probabilistic match is a best guess drawn from a network-shaped match key, so even a high score can name the wrong user.
+`matchGuaranteed` is `true` only when the match came from a deterministic signal, which is the Play Install Referrer on Android. No first install on iOS is guaranteed, and the IDFV never upgrades a match. Use it, like `matchConfidence`, to pick the destination or personalize onboarding (for example, prefilling a referral code), not to authenticate the user. Attribution is not identity: never sign a user in, restore an account, or show personal data because of a match, guaranteed or not. Authenticate the user and check authorization separately. A probabilistic match comes from a hashed match key built from the IP address and language, with time zone when available. Use it to route the user, not to identify them. `matchGuaranteed` is false for probabilistic matches, however high the score.
 
 ```dart
 if (attribution.matchGuaranteed) {
