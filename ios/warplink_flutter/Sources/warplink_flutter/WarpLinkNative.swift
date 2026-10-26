@@ -22,4 +22,12 @@ protocol WarpLinkNative: Sendable {
         completion: @escaping (Result<WarpLinkDeepLink?, WarpLinkError>) -> Void
     )
     func isWarpLinkURL(_ url: URL) -> Bool
+    func redeemInvitation(
+        text: String,
+        completion: @escaping (Result<WarpLinkDeepLink?, WarpLinkError>) -> Void
+    )
+    func claimReferral(
+        installerId: String,
+        completion: @escaping (Result<ReferralClaimResult, WarpLinkError>) -> Void
+    )
 }

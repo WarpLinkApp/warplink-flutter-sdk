@@ -1,10 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:warplink_flutter/src/errors.dart';
 import 'package:warplink_flutter/src/match_type.dart';
+import 'package:warplink_flutter/src/referral/attribution_evidence.dart';
 
 /// The stored result of the install attribution check.
 @immutable
-final class AttributionResult {
+final class AttributionResult extends AttributionEvidence {
   /// Creates an attribution result.
   const AttributionResult({
     required this.linkId,
@@ -12,12 +13,20 @@ final class AttributionResult {
     required this.matchConfidence,
     required this.matchGuaranteed,
     required this.isDeferred,
+    super.attributionId,
+    super.matchMethod,
+    super.evidenceClass,
+    super.replayState,
+    super.capturedParams,
+    super.tappedAt,
   });
 
   /// Decodes a platform channel map.
   ///
   /// Throws [WarpLinkDecodingException] when [raw] is not a map, or when
-  /// `matchType` or `matchConfidence` is missing or invalid.
+  /// `matchType` or `matchConfidence` is missing or invalid. The evidence
+  /// fields read as `null` (an empty map for `capturedParams`) when they are
+  /// absent or unknown.
   factory AttributionResult.fromMap(Object? raw) {
     if (raw is! Map<Object?, Object?>) {
       throw const WarpLinkDecodingException(
@@ -31,12 +40,19 @@ final class AttributionResult {
         'Native attribution payload is missing matchType or matchConfidence',
       );
     }
+    final evidence = AttributionEvidence.fromMap(raw);
     return AttributionResult(
       linkId: raw['linkId']?.toString() ?? '',
       matchType: matchType,
       matchConfidence: confidence.toDouble(),
       matchGuaranteed: raw['matchGuaranteed'] == true,
       isDeferred: raw['isDeferred'] == true,
+      attributionId: evidence.attributionId,
+      matchMethod: evidence.matchMethod,
+      evidenceClass: evidence.evidenceClass,
+      replayState: evidence.replayState,
+      capturedParams: evidence.capturedParams,
+      tappedAt: evidence.tappedAt,
     );
   }
 
@@ -52,8 +68,8 @@ final class AttributionResult {
   /// `true` only when the match was deterministic.
   ///
   /// Use it, like [matchConfidence], to pick the destination to route to, not
-  /// as a credential. A probabilistic match comes from a hashed match key
-  /// built from the IP address and language, with time zone when available.
+  /// as a credential. A probabilistic match is an estimate from device signals,
+  /// namely the IP address and language, with time zone when available.
   /// Use it to route the user, not to identify them. Authenticate the user and
   /// check authorization separately before showing private data or doing
   /// anything sensitive, guaranteed match or not.
@@ -69,7 +85,8 @@ final class AttributionResult {
       other.matchType == matchType &&
       other.matchConfidence == matchConfidence &&
       other.matchGuaranteed == matchGuaranteed &&
-      other.isDeferred == isDeferred;
+      other.isDeferred == isDeferred &&
+      evidenceEquals(other);
 
   @override
   int get hashCode => Object.hash(
@@ -78,11 +95,13 @@ final class AttributionResult {
     matchConfidence,
     matchGuaranteed,
     isDeferred,
+    evidenceHash,
   );
 
   @override
   String toString() =>
       'AttributionResult(linkId: $linkId, matchType: $matchType, '
       'matchConfidence: $matchConfidence, '
-      'matchGuaranteed: $matchGuaranteed, isDeferred: $isDeferred)';
+      'matchGuaranteed: $matchGuaranteed, isDeferred: $isDeferred, '
+      '$evidenceText)';
 }

@@ -1,24 +1,28 @@
 import Flutter
 import UIKit
-import WarpLink
 import XCTest
 
 @testable import warplink_flutter
+@testable import WarpLink
 
 /// A scripted stand-in for the native SDK singleton.
 final class FakeWarpLinkNative: WarpLinkNative, @unchecked Sendable {
     var isConfigured = false
     var isAttributionComplete = false
     var attributionResult: WarpLinkDeepLink?
-    var sdkVersion = "1.1.1"
+    var sdkVersion = "1.2.0"
     var knownHosts: Set<String> = ["aplnk.to"]
     var resolveResult: Result<WarpLinkDeepLink, WarpLinkError> = .failure(.linkNotFound)
     var deferredResult: Result<WarpLinkDeepLink?, WarpLinkError> = .success(nil)
+    var redeemResult: Result<WarpLinkDeepLink?, WarpLinkError> = .success(nil)
+    var claimResult: Result<ReferralClaimResult, WarpLinkError> = .success(.none)
     /// While `true`, a resolve waits in `heldResolves` until the test finishes it.
     var holdResolves = false
 
     private(set) var configureCalls: [(apiKey: String, options: WarpLinkOptions)] = []
     private(set) var resolveCalls: [URL] = []
+    private(set) var redeemCalls: [String] = []
+    private(set) var claimCalls: [String] = []
     private var heldResolves: [(Result<WarpLinkDeepLink, WarpLinkError>) -> Void] = []
 
     var latestOptions: WarpLinkOptions? { configureCalls.last?.options }
@@ -49,6 +53,22 @@ final class FakeWarpLinkNative: WarpLinkNative, @unchecked Sendable {
         completion: @escaping (Result<WarpLinkDeepLink?, WarpLinkError>) -> Void
     ) {
         completion(deferredResult)
+    }
+
+    func redeemInvitation(
+        text: String,
+        completion: @escaping (Result<WarpLinkDeepLink?, WarpLinkError>) -> Void
+    ) {
+        redeemCalls.append(text)
+        completion(redeemResult)
+    }
+
+    func claimReferral(
+        installerId: String,
+        completion: @escaping (Result<ReferralClaimResult, WarpLinkError>) -> Void
+    ) {
+        claimCalls.append(installerId)
+        completion(claimResult)
     }
 
     func isWarpLinkURL(_ url: URL) -> Bool {

@@ -38,6 +38,12 @@ class WarpLinkMethodHandler(
             "isConfigured" -> replies.success(result, sdk.isConfigured)
             "isAttributionComplete" -> replies.success(result, sdk.isAttributionComplete())
             "getSdkVersion" -> replies.success(result, sdk.sdkVersion)
+            "redeemInvitation" ->
+                sdk.redeemInvitation(call.stringArgument("text") ?: "") { replies.link(result, it) }
+            "claimReferral" ->
+                sdk.claimReferral(call.stringArgument("installerId") ?: "") {
+                    replies.claim(result, it)
+                }
             "getPendingArrivals" -> arrivals.getPendingArrivals(result)
             "resolveArrival" -> arrivals.resolveArrival(call, result)
             "claimDelivery" -> arrivals.claimDelivery(call, result)
@@ -72,5 +78,5 @@ class WarpLinkMethodHandler(
         replies.success(result, sdk.attributionResult?.toAttributionMap())
     }
 
-    private fun urlArgument(call: MethodCall): String? = call.argument<String>("url")
+    private fun urlArgument(call: MethodCall): String? = call.stringArgument("url")
 }

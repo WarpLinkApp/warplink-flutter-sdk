@@ -75,7 +75,8 @@ class DeepLinkMapperTest {
         assertEquals(
             setOf(
                 "linkId", "destination", "deepLinkUrl", "customParams", "isDeferred",
-                "matchType", "matchConfidence", "matchGuaranteed"
+                "matchType", "matchConfidence", "matchGuaranteed", "attributionId",
+                "matchMethod", "evidenceClass", "replayState", "capturedParams", "tappedAt"
             ),
             sampleLink().toChannelMap().keys
         )

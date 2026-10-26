@@ -1,6 +1,7 @@
 package app.warplink.flutter
 
 import android.content.Context
+import app.warplink.ReferralClaimResult
 import app.warplink.WarpLinkDeepLink
 
 /**
@@ -24,4 +25,10 @@ interface NativeSdk {
     fun isWarpLinkUrl(url: String): Boolean
 
     fun checkDeferredDeepLink(callback: (Result<WarpLinkDeepLink?>) -> Unit)
+
+    /** Hands pasted invitation text to the native SDK, which decides what it is. */
+    fun redeemInvitation(text: String, callback: (Result<WarpLinkDeepLink?>) -> Unit)
+
+    /** Claims the referral behind this install for [installerId]. */
+    fun claimReferral(installerId: String, callback: (Result<ReferralClaimResult>) -> Unit)
 }

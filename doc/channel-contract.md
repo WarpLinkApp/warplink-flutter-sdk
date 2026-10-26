@@ -32,10 +32,12 @@ All methods are asynchronous. Native replies on the platform (main) thread. Argu
 | `getAttributionResult` | none | attribution map (section 3.2), or `null` for no match |
 | `isConfigured` | none | `bool` |
 | `isAttributionComplete` | none | `bool` |
-| `getSdkVersion` | none | `String`: the NATIVE SDK constant (`"1.1.1"`), never the pub package version |
+| `getSdkVersion` | none | `String`: the NATIVE SDK constant (`"1.2.0"`), never the pub package version |
 | `getPendingArrivals` | none | `List<Map>` of ledger entries, oldest first (section 4.3) |
 | `resolveArrival` | `{ "arrivalId": String }` | deep link map, or `null`. Claims the arrival; join semantics (section 4.4) |
 | `claimDelivery` | `{ "arrivalId": String }` | `bool`. `true` to the first claim only (section 4.5) |
+| `redeemInvitation` | `{ "text": String }` | deep link map (section 3.1), or `null` when the text is not a WarpLink invitation or matched nothing (section 3.4) |
+| `claimReferral` | `{ "installerId": String }` | claim map (section 3.3). `status: "none"` is an answer, not an error (section 3.4) |
 
 `getInitialUrl` is removed. `getInitialDeepLink` is a Dart operation over the launch arrival (section 10.4); it has no native method.
 
@@ -75,9 +77,46 @@ Configure keeps the ledger. A second `configure` never clears entries. Native re
 
 A link resolved by a tap has `isDeferred: false`, `matchType: "deterministic"`, `matchConfidence: 1.0`, `matchGuaranteed: true`.
 
+The deep link map and the attribution map also carry six additive evidence keys, copied from the native SDK. Both maps always carry all six. Dart reads an absent key as no evidence, so an older native plugin still decodes.
+
+| Key | Type | Notes |
+|-----|------|-------|
+| `attributionId` | `String?` | Stable id of the attribution. The same on every replay of a match |
+| `matchMethod` | `String?` | `install_token`, `android_referrer`, `device_id`, `link_open`, `probabilistic`. An unknown value reads as `null` in Dart |
+| `evidenceClass` | `String?` | `exact`, `estimated`, `legacy_link`. `null` is the safe reading: never treated as exact |
+| `replayState` | `String?` | `original` or `replayed` |
+| `capturedParams` | `Map<String, Object?>` | Link parameters captured at the tap. `{}` when none |
+| `tappedAt` | `String?` | ISO 8601 text as the server sent it |
+
 ### 3.2 Attribution map
 
 `linkId`, `matchType`, `matchConfidence`, `matchGuaranteed`, `isDeferred`, same types as above. `matchType` and `matchConfidence` must be present: Dart throws `decodingError` when either is missing. Native answers `null`, not an empty map, when there is no match.
+
+### 3.3 Claim map
+
+| Key | Type | Notes |
+|-----|------|-------|
+| `status` | `String` | `claimed`, `flagged`, `ignored`, `none`. An unknown value reads as `none` in Dart |
+| `referralId` | `String?` | `null` when `status` is `none` |
+| `linkId` | `String?` | |
+| `linkUrl` | `String?` | |
+| `matchMethod` | `String?` | Same values as section 3.1 |
+| `isExact` | `bool` | |
+| `matchConfidence` | `num?` | |
+| `flags` | `List<String>` | `[]` when none |
+| `duplicateOf` | `String?` | For `ignored`: the referral that holds the credit |
+| `updated` | `bool` | |
+| `replayState` | `String?` | |
+
+All eleven keys are always present.
+
+### 3.4 Referral methods
+
+Native owns the parsing, the token shape, the expiry, the retry store and the claim rules. The plugin forwards the call and maps the answer. It adds no check of its own and never reads the clipboard.
+
+- `redeemInvitation` forwards `text` exactly as the app passed it. A missing `text` is the empty string. The result is the deep link map of the match, or `null`. A refusal (an invalid or expired invitation, a network failure) is a normal error reply (section 5). A 503 pending answer keeps the token on the device, and a later launch retries.
+- `claimReferral` forwards `installerId` as written. Native refuses an id outside 1 to 128 characters with `E_SERVER_ERROR` and status 400. No match is the map with `status: "none"`, never an error. Only a key or network failure is an error.
+- Neither method touches the arrival ledger or the `onLink` fan-out. A redeemed match returns to the caller only.
 
 ## 4. Arrivals
 
@@ -262,12 +301,14 @@ Recipients are decided only inside handlers, from the current state, never from 
 
 ## 12. Accepted limitations
 
-1. **Process death mid-request.** "Never loses a tap" covers arrivals recorded during a live process. If the process dies after the server recorded a click and before the SDK got the answer, the pinned 1.1.1 native APIs accept no caller-supplied tap id, and the ledger is not persisted. A relaunch is a new launch with a new tap id, and may bill a second click.
+1. **Process death mid-request.** "Never loses a tap" covers arrivals recorded during a live process. If the process dies after the server recorded a click and before the SDK got the answer, the pinned native APIs accept no caller-supplied tap id, and the ledger is not persisted. A relaunch is a new launch with a new tap id, and may bill a second click.
 2. **Crash between claim and delivery.** Dart claims before it delivers, so a crash, or a host `onLink` that throws before it navigates, after a `true` claim loses that one delivery. Native does not offer a delivered entry again. This is the price of at-most-once delivery.
 3. **Disposal while a claim is in flight or an answer is held.** Delivery is at most once. An engine disposal or a hot restart can lose a delivery in two cases. A delivery claim is in flight: the old runtime's claim may still win in native, and the old runtime drops its result silently. An answer is held: native granted its claim and the old runtime held it because no eligible recipient existed at delivery time, whether none had appeared yet or the last one had left. Native does not offer a claimed entry again, so the new runtime cannot deliver it.
 4. **iOS supersede is navigation parity.** The iOS public `handleDeepLink` always answers and cannot be cancelled, and its retries continue. Dart drops the stale answer, so the host sees one navigation, but the stale request can still complete and bill. Android's manual path shares the resolver and cancels older work. Request cancellation parity on iOS needs a public native resolve API with cancellation, a follow-up for a future native release.
 
 ## 13. Contract change log
+
+- Revision 3, referral handoff (SDK 1.2.0): added `redeemInvitation` and `claimReferral` (section 2), the six evidence keys on the deep link and attribution maps (section 3.1), the claim map (section 3.3) and the rules for both methods (section 3.4).
 
 - Revision 2, Android epoch-safe reconfigure: added the Android notes (section 11.2), matching the iOS rule.
 - Revision 2, review round 8: a superseded answer that is an error is delivered to no recipient and is still claimed. A superseded link still reaches `onDeepLink` subscribers (section 10.2).

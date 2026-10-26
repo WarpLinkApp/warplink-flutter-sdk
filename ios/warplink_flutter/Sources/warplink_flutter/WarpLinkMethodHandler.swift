@@ -28,6 +28,8 @@ final class WarpLinkMethodHandler: @unchecked Sendable {
         case "getPendingArrivals": getPendingArrivals(result: result)
         case "resolveArrival": resolveArrival(call.arguments, result: result)
         case "claimDelivery": result(claimDelivery(call.arguments))
+        case "redeemInvitation": redeemInvitation(call.arguments, result: result)
+        case "claimReferral": claimReferral(call.arguments, result: result)
         default: result(FlutterMethodNotImplemented)
         }
     }
@@ -115,6 +117,30 @@ final class WarpLinkMethodHandler: @unchecked Sendable {
             return
         }
         result(process.native.attributionResult.map(DeepLinkPayload.attribution))
+    }
+
+    // MARK: - referral
+
+    /// Forwards the pasted text untouched. Native owns the parsing.
+    private func redeemInvitation(_ arguments: Any?, result: @escaping FlutterResult) {
+        let text = Self.string("text", in: arguments) ?? ""
+        process.native.redeemInvitation(text: text) { outcome in
+            switch outcome {
+            case .success(let link): result(link.map(DeepLinkPayload.deepLink))
+            case .failure(let error): result(ContractError.from(error).flutterError)
+            }
+        }
+    }
+
+    /// No match is an answer (`none`), not an error.
+    private func claimReferral(_ arguments: Any?, result: @escaping FlutterResult) {
+        let installerId = Self.string("installerId", in: arguments) ?? ""
+        process.native.claimReferral(installerId: installerId) { outcome in
+            switch outcome {
+            case .success(let claim): result(ReferralPayload.claim(claim))
+            case .failure(let error): result(ContractError.from(error).flutterError)
+            }
+        }
     }
 
     private static func string(_ key: String, in arguments: Any?) -> String? {

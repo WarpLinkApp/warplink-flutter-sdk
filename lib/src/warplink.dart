@@ -10,6 +10,7 @@ import 'package:warplink_flutter/src/errors.dart';
 import 'package:warplink_flutter/src/events.dart';
 import 'package:warplink_flutter/src/link_runtime.dart';
 import 'package:warplink_flutter/src/platform_support.dart';
+import 'package:warplink_flutter/src/referral/referral_claim_result.dart';
 
 /// Default endpoint of the WarpLink API.
 const String defaultApiEndpoint = 'https://api.warplink.app/v1';
@@ -115,7 +116,39 @@ abstract final class WarpLink {
     return raw == null ? null : AttributionResult.fromMap(raw);
   }
 
-  /// The version the native SDK reports, for example `1.1.1`.
+  /// Redeems the invitation in [text], which the person pasted.
+  ///
+  /// Pass the text as the person pasted it. The native SDK decides whether it
+  /// is an invitation and whether it has expired. The SDK never reads the
+  /// clipboard.
+  ///
+  /// Returns the matched link, or `null` when the text is not an invitation or
+  /// matched nothing. Nothing is confirmed then, so do not tell the person a
+  /// referral was applied. A refused invitation throws a
+  /// [WarpLinkServerException] whose message says how to open the link again.
+  /// After a [WarpLinkNetworkException] the native SDK keeps the invitation and
+  /// tries again on a later launch, a bounded number of times.
+  static Future<WarpLinkDeepLink?> redeemInvitation(String text) async {
+    final raw = await _call(WarpLinkMethod.redeemInvitation, {'text': text});
+    return raw == null ? null : WarpLinkDeepLink.fromMap(raw);
+  }
+
+  /// Claims the referral behind this install for the person who just signed
+  /// up.
+  ///
+  /// [installerId] is your own stable id for that person, 1 to 128
+  /// characters. Calling again with the same id returns the same claim. A
+  /// status of [ReferralClaimStatus.none] is an answer, not an error. The call
+  /// throws only when it cannot reach the server, the key is refused, or
+  /// [installerId] is empty or too long.
+  static Future<ReferralClaimResult> claimReferral(String installerId) async {
+    final raw = await _call(WarpLinkMethod.claimReferral, {
+      'installerId': installerId,
+    });
+    return ReferralClaimResult.fromMap(raw);
+  }
+
+  /// The version the native SDK reports, for example `1.2.0`.
   ///
   /// This is the version sent on the wire, not the package version.
   static Future<String> sdkVersion() async {

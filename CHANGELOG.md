@@ -6,6 +6,37 @@ file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-10-25
+
+### Added
+
+- **`WarpLink.redeemInvitation(text)`.** Pass the text a person pasted. It
+  returns a `WarpLinkDeepLink` when the text is an invitation that matched, and
+  `null` when it is not an invitation. A refused invitation throws a
+  `WarpLinkServerException` whose message tells the person to open the link
+  again. After a network failure the native SDK keeps the invitation and tries
+  again on a later launch, a bounded number of times. A resumed invitation is
+  delivered through `getAttributionResult()` and `claimReferral`, not through
+  `onLink`.
+- **`WarpLink.claimReferral(installerId)`.** Claims the referral behind this
+  install for the person who just signed up. It returns a `ReferralClaimResult`
+  whose `status` is `claimed`, `flagged`, `ignored` or `none`. Status `none` is
+  an answer, not an error. Calling again with the same id returns the same
+  claim.
+- **Evidence fields on `WarpLinkDeepLink` and `AttributionResult`.**
+  `attributionId`, `matchMethod`, `evidenceClass`, `replayState`,
+  `capturedParams` and `tappedAt`. A payload from an older native SDK, or a
+  value this version does not know, reads as `null` (`{}` for
+  `capturedParams`). An unknown value is never read as exact.
+- New public types: `MatchMethod`, `EvidenceClass`, `ReplayState`,
+  `ReferralClaimStatus` and `ReferralClaimResult`.
+
+### Changed
+
+- The native SDK pins move to 1.2.0: iOS 1.2.0 (Swift Package Manager) and
+  Android 1.2.0 (`app.warplink:sdk`).
+- The package reads no clipboard. The host app passes the pasted text.
+
 ## [1.1.1] - 2026-10-10
 
 The native SDK pins move to 1.1.1: iOS 1.1.1 (Swift Package Manager) and

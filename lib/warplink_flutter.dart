@@ -7,5 +7,8 @@ export 'src/deep_link.dart';
 export 'src/errors.dart';
 export 'src/events.dart';
 export 'src/match_type.dart';
+export 'src/referral/attribution_evidence.dart';
+export 'src/referral/referral_claim_result.dart';
+export 'src/referral/referral_enums.dart';
 export 'src/version.dart';
 export 'src/warplink.dart' show WarpLink, defaultApiEndpoint;

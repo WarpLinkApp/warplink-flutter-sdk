@@ -125,7 +125,27 @@ static Future<bool> isWarpLinkUrl(String url)
 static Future<String> sdkVersion()
 ```
 
-The version the native SDK reports, for example `1.1.1`. This is the version sent on the wire, not the package version. The package constant is `warplinkFlutterVersion`.
+The version the native SDK reports, for example `1.2.0`. This is the version sent on the wire, not the package version. The package constant is `warplinkFlutterVersion`.
+
+#### `redeemInvitation`
+
+```dart
+static Future<WarpLinkDeepLink?> redeemInvitation(String text)
+```
+
+Redeems the invitation in `text`, which the person pasted. Pass the text as pasted: the native SDK decides whether it is an invitation and whether it has expired. The SDK never reads the clipboard.
+
+Returns the matched link, or `null` when the text is not an invitation or matched nothing. Nothing is confirmed then, so do not tell the person a referral was applied. A refused invitation throws `WarpLinkServerException` with a message that says how to open the link again. After a `WarpLinkNetworkException` the native SDK keeps the invitation and tries again on a later launch, a bounded number of times. That later result is delivered through `getAttributionResult()` and `claimReferral`, not through `onLink`. Onboarding does not need to wait on this call.
+
+#### `claimReferral`
+
+```dart
+static Future<ReferralClaimResult> claimReferral(String installerId)
+```
+
+Claims the referral behind this install for the person who just signed up. `installerId` is your own stable id for that person, 1 to 128 characters. Calling again with the same id returns the same claim.
+
+A `status` of `ReferralClaimStatus.none` is an ordinary answer: there was no referral to credit. The call throws only when it cannot reach the server, the key is refused, or `installerId` is empty or too long (`WarpLinkServerException` with `statusCode` 400).
 
 #### `onDeepLink`
 
@@ -156,7 +176,7 @@ Takes the URL that launched the app, once, and resolves it. The second call retu
 | Name | Value | Description |
 |------|-------|-------------|
 | `defaultApiEndpoint` | `https://api.warplink.app/v1` | Default `apiEndpoint` |
-| `warplinkFlutterVersion` | `1.1.1` | Version of the Dart package |
+| `warplinkFlutterVersion` | `1.2.0` | Version of the Dart package |
 
 ## Types
 
@@ -202,6 +222,12 @@ A resolved WarpLink link.
 | `matchType` | `MatchType?` | How the link was matched, or `null` when it was not matched at all |
 | `matchConfidence` | `double?` | Confidence from 0 to 1, or `null` when not matched |
 | `matchGuaranteed` | `bool` | `true` only for a deterministic match |
+| `attributionId` | `String?` | Stable id of the attribution. The same on every replay of a match |
+| `matchMethod` | `MatchMethod?` | How the match was made. `null` when not known |
+| `evidenceClass` | `EvidenceClass?` | How strong the evidence is. `null` is never read as exact |
+| `replayState` | `ReplayState?` | `original` for the first answer, `replayed` for a repeat |
+| `capturedParams` | `Map<String, Object?>` | Link parameters captured at the tap. Empty map when none. Unmodifiable |
+| `tappedAt` | `String?` | When the link was tapped, as the ISO 8601 text the server sent |
 
 A link resolved by a tap has `isDeferred: false`, `matchType: MatchType.deterministic`, `matchConfidence: 1.0`, and `matchGuaranteed: true`. The class has value equality.
 
@@ -221,15 +247,48 @@ The stored result of the install attribution check.
 | `matchGuaranteed` | `bool` | `true` only for a deterministic match |
 | `isDeferred` | `bool` | `true` when the deferred check attributed the install |
 
+`AttributionResult` carries the same six evidence properties as `WarpLinkDeepLink`: `attributionId`, `matchMethod`, `evidenceClass`, `replayState`, `capturedParams` and `tappedAt`.
+
 ### `MatchType`
 
 ```dart
 enum MatchType { deterministic, probabilistic }
 ```
 
-`deterministic` matches by the Play Install Referrer on Android, has confidence 1.0, and is guaranteed. The iOS IDFV is a repeat check and never produces it. `probabilistic` matches by a hashed match key built from the IP address and language, with time zone when available. `matchGuaranteed` is false for probabilistic matches. `wireValue` holds the lowercase string.
+`deterministic` matches by the Play Install Referrer on Android, has confidence 1.0, and is guaranteed. The iOS IDFV is a repeat check and never produces it. `probabilistic` is an estimated match from device signals. `matchGuaranteed` is false for probabilistic matches. `wireValue` holds the lowercase string.
 
-> **Use `matchGuaranteed`, like `matchConfidence`, to pick a destination. It is not a credential.** A probabilistic match comes from a hashed match key built from the IP address and language, with time zone when available. Use it to route the user, not to identify them. Authenticate the user and check authorization separately before showing private data or doing anything sensitive, guaranteed match or not.
+> **Use `matchGuaranteed`, like `matchConfidence`, to pick a destination. It is not a credential.** A probabilistic match is an estimated match from device signals. Use it to route the user, not to identify them. Authenticate the user and check authorization separately before showing private data or doing anything sensitive, guaranteed match or not.
+
+### `ReferralClaimResult`
+
+The answer to `claimReferral`.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `status` | `ReferralClaimStatus` | `claimed`, `flagged`, `ignored` or `none` |
+| `referralId` | `String?` | Id of the referral. `null` when `status` is `none` |
+| `linkId` | `String?` | The link the referral came from |
+| `linkUrl` | `String?` | The short URL of that link |
+| `matchMethod` | `MatchMethod?` | How the referral was matched |
+| `isExact` | `bool` | `true` when the match rests on exact evidence |
+| `matchConfidence` | `double?` | Confidence of an estimated match |
+| `flags` | `List<String>` | Reasons the referral was flagged, for example `outside_window`. Empty when none |
+| `duplicateOf` | `String?` | For `ignored`, the referral that already holds the credit |
+| `updated` | `bool` | `true` when this call replaced an earlier estimate with an exact match |
+| `replayState` | `ReplayState?` | `original` or `replayed` |
+
+`flagged` is credited and marked for review. `ignored` is not credited again. The class has value equality. An unknown `status` reads as `none`.
+
+### Evidence enums
+
+```dart
+enum MatchMethod { installToken, androidReferrer, deviceId, linkOpen, probabilistic }
+enum EvidenceClass { exact, estimated, legacyLink }
+enum ReplayState { original, replayed }
+enum ReferralClaimStatus { claimed, flagged, ignored, none }
+```
+
+Each has a `wireValue` string (`install_token`, `legacy_link`, and so on) and a static `fromWire` that returns `null` for an unknown string.
 
 ## Error Types
 

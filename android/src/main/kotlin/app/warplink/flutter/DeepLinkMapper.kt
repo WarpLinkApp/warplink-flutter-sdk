@@ -15,6 +15,17 @@ fun WarpLinkDeepLink.toChannelMap(): Map<String, Any?> =
         "matchType" to matchType?.name?.lowercase(),
         "matchConfidence" to matchConfidence,
         "matchGuaranteed" to matchGuaranteed
+    ) + evidenceMap()
+
+/** The additive evidence fields of a match (section 3.1). Absent values are null. */
+private fun WarpLinkDeepLink.evidenceMap(): Map<String, Any?> =
+    mapOf(
+        "attributionId" to attributionId,
+        "matchMethod" to matchMethod?.wireValue,
+        "evidenceClass" to evidenceClass?.wireValue,
+        "replayState" to replayState?.wireValue,
+        "capturedParams" to capturedParams.mapValues { (_, value) -> toJsonValue(value) },
+        "tappedAt" to tappedAt
     )
 
 /** Builds the attribution map of the channel contract (section 3.2). */
@@ -25,7 +36,7 @@ fun WarpLinkDeepLink.toAttributionMap(): Map<String, Any?> =
         "matchConfidence" to matchConfidence,
         "matchGuaranteed" to matchGuaranteed,
         "isDeferred" to isDeferred
-    )
+    ) + evidenceMap()
 
 /**
  * Converts a custom parameter value to a standard codec value.

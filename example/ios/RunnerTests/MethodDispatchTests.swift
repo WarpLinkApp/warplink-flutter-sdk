@@ -105,7 +105,11 @@ final class MethodDispatchTests: XCTestCase {
         let map = try XCTUnwrap(rig.call("getAttributionResult").value as? [String: Any])
         XCTAssertEqual(
             Set(map.keys),
-            ["linkId", "matchType", "matchConfidence", "matchGuaranteed", "isDeferred"]
+            [
+                "linkId", "matchType", "matchConfidence", "matchGuaranteed", "isDeferred",
+                "attributionId", "matchMethod", "evidenceClass", "replayState",
+                "capturedParams", "tappedAt",
+            ]
         )
         XCTAssertEqual(map["matchType"] as? String, "deterministic")
     }

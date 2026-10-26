@@ -5,7 +5,7 @@ enum MatchType {
   /// Confidence is always 1.0 and the match is guaranteed.
   deterministic('deterministic'),
 
-  /// Matched by probabilistic matching on a hashed match key built from the IP
+  /// Matched by probabilistic matching on an estimate from device signals: the IP
   /// address and language, with time zone when available.
   probabilistic('probabilistic');
 

@@ -2,6 +2,7 @@ package app.warplink.flutter
 
 import android.content.Context
 import android.net.Uri
+import app.warplink.ReferralClaimResult
 import app.warplink.WarpLink
 import app.warplink.WarpLinkDeepLink
 import app.warplink.WarpLinkOptions
@@ -42,5 +43,13 @@ class AndroidNativeSdk : NativeSdk {
 
     override fun checkDeferredDeepLink(callback: (Result<WarpLinkDeepLink?>) -> Unit) {
         WarpLink.checkDeferredDeepLink(callback)
+    }
+
+    override fun redeemInvitation(text: String, callback: (Result<WarpLinkDeepLink?>) -> Unit) {
+        WarpLink.redeemInvitation(text, callback)
+    }
+
+    override fun claimReferral(installerId: String, callback: (Result<ReferralClaimResult>) -> Unit) {
+        WarpLink.claimReferral(installerId, callback)
     }
 }

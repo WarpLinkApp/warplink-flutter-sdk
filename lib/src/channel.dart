@@ -42,6 +42,12 @@ abstract final class WarpLinkMethod {
 
   /// Reads the version the native SDK reports.
   static const String getSdkVersion = 'getSdkVersion';
+
+  /// Hands pasted invitation text to the native SDK.
+  static const String redeemInvitation = 'redeemInvitation';
+
+  /// Claims the referral behind this install.
+  static const String claimReferral = 'claimReferral';
 }
 
 /// Typed access to the plugin's platform channels.

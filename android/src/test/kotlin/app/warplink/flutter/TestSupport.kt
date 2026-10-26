@@ -2,7 +2,9 @@ package app.warplink.flutter
 
 import android.content.Context
 import app.warplink.MatchType
+import app.warplink.ReferralClaimResult
 import app.warplink.WarpLinkDeepLink
+import app.warplink.referral.ReferralClaimStatus
 
 const val VALID_KEY = "wl_live_abcdefghijklmnopqrstuvwxyz012345"
 
@@ -33,7 +35,7 @@ class TestClock(var now: Long = 1_000L) {
  * [held] until [finishHeld] delivers it.
  */
 class FakeSdk : NativeSdk {
-    override val sdkVersion = "1.1.1"
+    override val sdkVersion = "1.2.0"
     override var isConfigured = false
     override var attributionResult: WarpLinkDeepLink? = null
     var attributionComplete = false
@@ -41,6 +43,12 @@ class FakeSdk : NativeSdk {
     var holdResolves = false
     var handleOutcome: (String) -> Result<WarpLinkDeepLink> = { Result.success(sampleLink(it)) }
     var deferredOutcome: Result<WarpLinkDeepLink?> = Result.success(null)
+    var redeemOutcome: Result<WarpLinkDeepLink?> = Result.success(null)
+    var claimOutcome: Result<ReferralClaimResult> =
+        Result.success(ReferralClaimResult(status = ReferralClaimStatus.NONE))
+
+    val redeemed = mutableListOf<String>()
+    val claimed = mutableListOf<String>()
 
     val configures = mutableListOf<ConfigureRequest>()
     val handled = mutableListOf<String>()
@@ -63,6 +71,16 @@ class FakeSdk : NativeSdk {
 
     override fun checkDeferredDeepLink(callback: (Result<WarpLinkDeepLink?>) -> Unit) {
         callback(deferredOutcome)
+    }
+
+    override fun redeemInvitation(text: String, callback: (Result<WarpLinkDeepLink?>) -> Unit) {
+        redeemed.add(text)
+        callback(redeemOutcome)
+    }
+
+    override fun claimReferral(installerId: String, callback: (Result<ReferralClaimResult>) -> Unit) {
+        claimed.add(installerId)
+        callback(claimOutcome)
     }
 
     /** Delivers the answer of the oldest held native resolve. */

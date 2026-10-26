@@ -110,7 +110,7 @@ if (attribution != null) {
 
 ### `matchGuaranteed` is not a credential
 
-`matchGuaranteed` is `true` only when the match came from a deterministic signal, which is the Play Install Referrer on Android. No first install on iOS is guaranteed, and the IDFV never upgrades a match. Use it, like `matchConfidence`, to pick the destination or personalize onboarding (for example, prefilling a referral code), not to authenticate the user. Attribution is not identity: never sign a user in, restore an account, or show personal data because of a match, guaranteed or not. Authenticate the user and check authorization separately. A probabilistic match comes from a hashed match key built from the IP address and language, with time zone when available. Use it to route the user, not to identify them. `matchGuaranteed` is false for probabilistic matches, however high the score.
+`matchGuaranteed` is `true` only when the match came from a deterministic signal, which is the Play Install Referrer on Android. No first install on iOS is guaranteed, and the IDFV never upgrades a match. Use it, like `matchConfidence`, to pick the destination or personalize onboarding (for example, prefilling a referral code), not to authenticate the user. Attribution is not identity: never sign a user in, restore an account, or show personal data because of a match, guaranteed or not. Authenticate the user and check authorization separately. A probabilistic match is an estimated match from device signals. Use it to route the user, not to identify them. `matchGuaranteed` is false for probabilistic matches, however high the score.
 
 ```dart
 if (attribution.matchGuaranteed) {
@@ -149,6 +149,29 @@ if (attribution == null) {
   showOnboarding(); // too uncertain, treat as organic
 }
 ```
+
+### Referral handoff
+
+Two calls carry a referral from the install to the new account.
+
+```dart
+// The person pasted the invitation text. Pass it as pasted.
+final link = await WarpLink.redeemInvitation(pastedText);
+
+// After sign-up, with your own stable id for the person.
+final claim = await WarpLink.claimReferral(userId);
+switch (claim.status) {
+  case ReferralClaimStatus.claimed:
+  case ReferralClaimStatus.flagged:
+    // Credited. A flagged claim is also marked for review.
+  case ReferralClaimStatus.ignored:
+    // Already credited to another referral: see claim.duplicateOf.
+  case ReferralClaimStatus.none:
+    // No referral to credit. This is an answer, not an error.
+}
+```
+
+The SDK never reads the clipboard: your app decides what text to pass. An invitation that a network failure delayed is kept by the native SDK and finished on a later launch. That result is delivered through `getAttributionResult()` and `claimReferral`, not through `onLink`. Check `evidenceClass` before you give a reward. `exact` rests on exact evidence, `estimated` on an estimate, and `legacy_link` on the link id alone. A `null` value means the source is not known and is never exact.
 
 ## Privacy Considerations
 

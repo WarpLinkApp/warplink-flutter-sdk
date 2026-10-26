@@ -28,4 +28,18 @@ struct LiveWarpLinkNative: WarpLinkNative {
     func isWarpLinkURL(_ url: URL) -> Bool {
         WarpLink.isWarpLinkURL(url)
     }
+
+    func redeemInvitation(
+        text: String,
+        completion: @escaping (Result<WarpLinkDeepLink?, WarpLinkError>) -> Void
+    ) {
+        WarpLink.redeemInvitation(text: text, completion: completion)
+    }
+
+    func claimReferral(
+        installerId: String,
+        completion: @escaping (Result<ReferralClaimResult, WarpLinkError>) -> Void
+    ) {
+        WarpLink.claimReferral(installerId: installerId, completion: completion)
+    }
 }

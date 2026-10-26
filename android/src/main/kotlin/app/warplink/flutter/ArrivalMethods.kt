@@ -22,12 +22,12 @@ class ArrivalMethods(
     }
 
     fun resolveArrival(call: MethodCall, result: MethodChannel.Result) {
-        val arrivalId = call.argument<String>("arrivalId") ?: ""
+        val arrivalId = call.stringArgument("arrivalId") ?: ""
         process.resolver.resolve(arrivalId, owner) { replies.link(result, it) }
     }
 
     fun claimDelivery(call: MethodCall, result: MethodChannel.Result) {
-        val arrivalId = call.argument<String>("arrivalId") ?: ""
+        val arrivalId = call.stringArgument("arrivalId") ?: ""
         replies.success(result, process.ledger.claimDelivery(arrivalId))
     }
 

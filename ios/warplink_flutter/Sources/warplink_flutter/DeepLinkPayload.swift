@@ -14,7 +14,7 @@ enum DeepLinkPayload {
             "matchType": link.matchType?.rawValue ?? NSNull(),
             "matchConfidence": link.matchConfidence ?? NSNull(),
             "matchGuaranteed": link.matchGuaranteed,
-        ]
+        ].merging(ReferralPayload.evidence(link)) { current, _ in current }
     }
 
     /// The attribution map (section 3.2).
@@ -25,7 +25,7 @@ enum DeepLinkPayload {
             "matchConfidence": link.matchConfidence ?? NSNull(),
             "matchGuaranteed": link.matchGuaranteed,
             "isDeferred": link.isDeferred,
-        ]
+        ].merging(ReferralPayload.evidence(link)) { current, _ in current }
     }
 
     /// Lowers a `JSONValue` to the types the standard codec carries.

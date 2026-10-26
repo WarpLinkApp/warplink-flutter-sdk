@@ -111,7 +111,7 @@ class ConfigureTest {
 
     @Test
     fun theReadMethodsPassTheNativeAnswersThrough() {
-        assertEquals("1.1.1", engine.call("getSdkVersion"))
+        assertEquals("1.2.0", engine.call("getSdkVersion"))
         assertEquals(false, engine.call("isConfigured"))
         assertEquals(false, engine.call("isAttributionComplete"))
         sdk.attributionComplete = true
@@ -127,7 +127,9 @@ class ConfigureTest {
         assertNull(engine.call("getAttributionResult"))
         sdk.attributionResult = sampleLink("attr")
         val map = engine.call("getAttributionResult") as Map<*, *>
-        assertEquals(setOf("linkId", "matchType", "matchConfidence", "matchGuaranteed", "isDeferred"), map.keys)
+        val evidence = setOf("attributionId", "matchMethod", "evidenceClass", "replayState", "capturedParams", "tappedAt")
+        val legacy = setOf("linkId", "matchType", "matchConfidence", "matchGuaranteed", "isDeferred")
+        assertEquals(legacy + evidence, map.keys)
     }
 
     @Test

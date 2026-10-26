@@ -1,5 +1,6 @@
 package app.warplink.flutter
 
+import app.warplink.ReferralClaimResult
 import app.warplink.WarpLinkDeepLink
 import io.flutter.plugin.common.MethodChannel
 
@@ -27,6 +28,14 @@ class MethodReplies(private val main: MainThread) {
 
     fun notImplemented(result: MethodChannel.Result) {
         main.run { if (!closed) result.notImplemented() }
+    }
+
+    /** Replies with the claim map or the mapped error of [outcome]. */
+    fun claim(result: MethodChannel.Result, outcome: Result<ReferralClaimResult>) {
+        outcome.fold(
+            onSuccess = { success(result, it.toChannelMap()) },
+            onFailure = { error(result, it) }
+        )
     }
 
     /** Replies with the deep link map, `null`, or the mapped error of [outcome]. */
