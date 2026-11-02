@@ -29,6 +29,12 @@ interface NativeSdk {
     /** Hands pasted invitation text to the native SDK, which decides what it is. */
     fun redeemInvitation(text: String, callback: (Result<WarpLinkDeepLink?>) -> Unit)
 
+    /**
+     * Clears this install's attribution state. A live key is a no-op success. The
+     * failure is `DecodingError` when a stored item could not be deleted.
+     */
+    fun clearAttribution(): Result<Unit>
+
     /** Claims the referral behind this install for [installerId]. */
     fun claimReferral(installerId: String, callback: (Result<ReferralClaimResult>) -> Unit)
 }

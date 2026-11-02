@@ -49,6 +49,8 @@ class AndroidNativeSdk : NativeSdk {
         WarpLink.redeemInvitation(text, callback)
     }
 
+    override fun clearAttribution(): Result<Unit> = WarpLink.clearAttribution()
+
     override fun claimReferral(installerId: String, callback: (Result<ReferralClaimResult>) -> Unit) {
         WarpLink.claimReferral(installerId, callback)
     }

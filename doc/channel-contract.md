@@ -32,12 +32,13 @@ All methods are asynchronous. Native replies on the platform (main) thread. Argu
 | `getAttributionResult` | none | attribution map (section 3.2), or `null` for no match |
 | `isConfigured` | none | `bool` |
 | `isAttributionComplete` | none | `bool` |
-| `getSdkVersion` | none | `String`: the NATIVE SDK constant (`"1.2.0"`), never the pub package version |
+| `getSdkVersion` | none | `String`: the NATIVE SDK constant (`"1.3.0"`), never the pub package version |
 | `getPendingArrivals` | none | `List<Map>` of ledger entries, oldest first (section 4.3) |
 | `resolveArrival` | `{ "arrivalId": String }` | deep link map, or `null`. Claims the arrival; join semantics (section 4.4) |
 | `claimDelivery` | `{ "arrivalId": String }` | `bool`. `true` to the first claim only (section 4.5) |
 | `redeemInvitation` | `{ "text": String }` | deep link map (section 3.1), or `null` when the text is not a WarpLink invitation or matched nothing (section 3.4) |
 | `claimReferral` | `{ "installerId": String }` | claim map (section 3.3). `status: "none"` is an answer, not an error (section 3.4) |
+| `clearAttribution` | none | `null`. A live key is a no-op success. Failure is `E_NOT_CONFIGURED` before `configure`, or `E_DECODING_ERROR` with the message "Could not clear stored attribution data." when a stored item could not be deleted. Dart owns the deferred check restart for a Test key |
 
 `getInitialUrl` is removed. `getInitialDeepLink` is a Dart operation over the launch arrival (section 10.4); it has no native method.
 
@@ -308,6 +309,7 @@ Recipients are decided only inside handlers, from the current state, never from 
 
 ## 13. Contract change log
 
+- Revision 4, attribution reset (SDK 1.3.0): added `clearAttribution` (section 2). No error code is added.
 - Revision 3, referral handoff (SDK 1.2.0): added `redeemInvitation` and `claimReferral` (section 2), the six evidence keys on the deep link and attribution maps (section 3.1), the claim map (section 3.3) and the rules for both methods (section 3.4).
 
 - Revision 2, Android epoch-safe reconfigure: added the Android notes (section 11.2), matching the iOS rule.

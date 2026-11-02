@@ -43,6 +43,9 @@ abstract final class WarpLinkMethod {
   /// Reads the version the native SDK reports.
   static const String getSdkVersion = 'getSdkVersion';
 
+  /// Forgets this install's attribution. Test keys only.
+  static const String clearAttribution = 'clearAttribution';
+
   /// Hands pasted invitation text to the native SDK.
   static const String redeemInvitation = 'redeemInvitation';
 

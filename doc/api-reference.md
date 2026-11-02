@@ -125,7 +125,7 @@ static Future<bool> isWarpLinkUrl(String url)
 static Future<String> sdkVersion()
 ```
 
-The version the native SDK reports, for example `1.2.0`. This is the version sent on the wire, not the package version. The package constant is `warplinkFlutterVersion`.
+The version the native SDK reports, for example `1.3.0`. This is the version sent on the wire, not the package version. The package constant is `warplinkFlutterVersion`.
 
 #### `redeemInvitation`
 
@@ -146,6 +146,18 @@ static Future<ReferralClaimResult> claimReferral(String installerId)
 Claims the referral behind this install for the person who just signed up. `installerId` is your own stable id for that person, 1 to 128 characters. Calling again with the same id returns the same claim.
 
 A `status` of `ReferralClaimStatus.none` is an ordinary answer: there was no referral to credit. The call throws only when it cannot reach the server, the key is refused, or `installerId` is empty or too long (`WarpLinkServerException` with `statusCode` 400).
+
+#### `clearAttribution`
+
+```dart
+static Future<void> clearAttribution()
+```
+
+Forgets this install's attribution so the next first launch can be tested again: the cached match, the completed and attempted gates, and any held referral invitation. Server records are not deleted.
+
+Test only. With a `wl_live_` key this does nothing and completes, so it can never erase a live install's attribution. With a `wl_test_` key and `automaticDeferredDeepLinks` on, a check in flight is discarded and a fresh check starts; its match reaches `onLink`.
+
+Throws `WarpLinkNotConfiguredException` before `configure`, and `WarpLinkDecodingException`, with the message "Could not clear stored attribution data.", when a stored item could not be deleted and some state may remain. Calling again is safe.
 
 #### `onDeepLink`
 
@@ -176,7 +188,7 @@ Takes the URL that launched the app, once, and resolves it. The second call retu
 | Name | Value | Description |
 |------|-------|-------------|
 | `defaultApiEndpoint` | `https://api.warplink.app/v1` | Default `apiEndpoint` |
-| `warplinkFlutterVersion` | `1.2.0` | Version of the Dart package |
+| `warplinkFlutterVersion` | `1.3.0` | Version of the Dart package |
 
 ## Types
 

@@ -26,6 +26,9 @@ protocol WarpLinkNative: Sendable {
         text: String,
         completion: @escaping (Result<WarpLinkDeepLink?, WarpLinkError>) -> Void
     )
+    /// A live key is a no-op success. Failure is `.decodingError` when a stored
+    /// item could not be deleted.
+    func clearAttribution() -> Result<Void, WarpLinkError>
     func claimReferral(
         installerId: String,
         completion: @escaping (Result<ReferralClaimResult, WarpLinkError>) -> Void

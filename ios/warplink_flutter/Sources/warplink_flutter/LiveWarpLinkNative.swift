@@ -36,6 +36,10 @@ struct LiveWarpLinkNative: WarpLinkNative {
         WarpLink.redeemInvitation(text: text, completion: completion)
     }
 
+    func clearAttribution() -> Result<Void, WarpLinkError> {
+        WarpLink.clearAttribution()
+    }
+
     func claimReferral(
         installerId: String,
         completion: @escaping (Result<ReferralClaimResult, WarpLinkError>) -> Void

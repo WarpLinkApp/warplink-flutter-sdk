@@ -11,6 +11,8 @@ final class DispatchConfig {
     required this.onLink,
     required this.automaticDeepLinks,
     required this.automaticDeferredDeepLinks,
+    this.isTestKey = false,
+    this.apiKey,
   });
 
   /// The configuration before any `configure`: nothing is automatic.
@@ -22,6 +24,14 @@ final class DispatchConfig {
 
   /// The single sink for cold-start, warm-start, and deferred links.
   final WarpLinkListener? onLink;
+
+  /// The API key of the configuration, or `null` before any `configure`.
+  ///
+  /// Compared only to tell a key change from a repeat; never logged.
+  final String? apiKey;
+
+  /// Whether the configuration uses a `wl_test_` key.
+  final bool isTestKey;
 
   /// The host's own option. It takes effect only with [onLink].
   final bool automaticDeepLinks;

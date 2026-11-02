@@ -30,6 +30,7 @@ final class WarpLinkMethodHandler: @unchecked Sendable {
         case "claimDelivery": result(claimDelivery(call.arguments))
         case "redeemInvitation": redeemInvitation(call.arguments, result: result)
         case "claimReferral": claimReferral(call.arguments, result: result)
+        case "clearAttribution": clearAttribution(result: result)
         default: result(FlutterMethodNotImplemented)
         }
     }
@@ -140,6 +141,14 @@ final class WarpLinkMethodHandler: @unchecked Sendable {
             case .success(let claim): result(ReferralPayload.claim(claim))
             case .failure(let error): result(ContractError.from(error).flutterError)
             }
+        }
+    }
+
+    /// A live key replies `nil` without clearing anything.
+    private func clearAttribution(result: FlutterResult) {
+        switch process.native.clearAttribution() {
+        case .success: result(nil)
+        case .failure(let error): result(ContractError.from(error).flutterError)
         }
     }
 

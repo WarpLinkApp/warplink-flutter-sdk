@@ -3,6 +3,9 @@ import 'package:warplink_flutter/src/events.dart';
 
 final RegExp _apiKeyPattern = RegExp(r'^wl_(live|test)_[a-zA-Z0-9]{32}$');
 
+/// Whether [apiKey] is a Test key. A Test key is the only kind a reset acts on.
+bool isTestApiKey(String apiKey) => apiKey.startsWith('wl_test_');
+
 /// The text reported for a key that fails [isValidApiKey].
 const String invalidApiKeyMessage =
     'Invalid API key format. Expected: wl_live_xxx or wl_test_xxx '

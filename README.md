@@ -193,6 +193,10 @@ await WarpLink.configure(
 
 Add `applinks:links.yourapp.com` to your Associated Domains and a second `<data>` host to your Android intent filter. See [Custom link domains](doc/api-reference.md#custom-link-domains).
 
+## Testing a first install
+
+A `wl_test_` key keeps its attribution state apart from `wl_live_` state on the same device. Use a Test key in debug builds. To test a first install again without deleting the app, call `WarpLink.clearAttribution()` with a Test key. It clears the attribution stored on the device and starts a new check. It does nothing with a live key.
+
 ## Manual mode
 
 Set `automaticDeepLinks: false`, or omit `onLink`, to wire links yourself. `WarpLink.onDeepLink` emits every URL the app receives while it runs, resolved. `WarpLink.getInitialDeepLink()` returns the link that launched the app, once.
@@ -280,7 +284,7 @@ Use `matchGuaranteed` to pick a destination or personalize onboarding, for examp
 
 ## Error handling
 
-Every failure is a `WarpLinkException`, a sealed class with nine subclasses. Switch over it for exhaustive handling, or read `wireCode` (for example `E_NETWORK_ERROR`), the same code string the iOS, Android, and React Native SDKs use.
+Every failure is a `WarpLinkException`, a sealed class with ten subclasses. Switch over it for exhaustive handling, or read `wireCode` (for example `E_NETWORK_ERROR`), the same code string the iOS, Android, and React Native SDKs use.
 
 ```dart
 try {

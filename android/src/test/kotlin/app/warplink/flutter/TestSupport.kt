@@ -35,7 +35,7 @@ class TestClock(var now: Long = 1_000L) {
  * [held] until [finishHeld] delivers it.
  */
 class FakeSdk : NativeSdk {
-    override val sdkVersion = "1.2.0"
+    override val sdkVersion = "1.3.0"
     override var isConfigured = false
     override var attributionResult: WarpLinkDeepLink? = null
     var attributionComplete = false
@@ -47,8 +47,11 @@ class FakeSdk : NativeSdk {
     var claimOutcome: Result<ReferralClaimResult> =
         Result.success(ReferralClaimResult(status = ReferralClaimStatus.NONE))
 
+    var clearOutcome: Result<Unit> = Result.success(Unit)
+
     val redeemed = mutableListOf<String>()
     val claimed = mutableListOf<String>()
+    var clears = 0
 
     val configures = mutableListOf<ConfigureRequest>()
     val handled = mutableListOf<String>()
@@ -76,6 +79,11 @@ class FakeSdk : NativeSdk {
     override fun redeemInvitation(text: String, callback: (Result<WarpLinkDeepLink?>) -> Unit) {
         redeemed.add(text)
         callback(redeemOutcome)
+    }
+
+    override fun clearAttribution(): Result<Unit> {
+        clears++
+        return clearOutcome
     }
 
     override fun claimReferral(installerId: String, callback: (Result<ReferralClaimResult>) -> Unit) {

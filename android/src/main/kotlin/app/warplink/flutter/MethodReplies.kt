@@ -38,6 +38,14 @@ class MethodReplies(private val main: MainThread) {
         )
     }
 
+    /** Replies `null` on success, or with the mapped error of [outcome]. */
+    fun unit(result: MethodChannel.Result, outcome: Result<Unit>) {
+        outcome.fold(
+            onSuccess = { success(result, null) },
+            onFailure = { error(result, it) }
+        )
+    }
+
     /** Replies with the deep link map, `null`, or the mapped error of [outcome]. */
     fun link(result: MethodChannel.Result, outcome: Result<WarpLinkDeepLink?>) {
         outcome.fold(

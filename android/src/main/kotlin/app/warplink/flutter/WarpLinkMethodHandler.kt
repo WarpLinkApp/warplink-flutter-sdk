@@ -40,6 +40,7 @@ class WarpLinkMethodHandler(
             "getSdkVersion" -> replies.success(result, sdk.sdkVersion)
             "redeemInvitation" ->
                 sdk.redeemInvitation(call.stringArgument("text") ?: "") { replies.link(result, it) }
+            "clearAttribution" -> replies.unit(result, sdk.clearAttribution())
             "claimReferral" ->
                 sdk.claimReferral(call.stringArgument("installerId") ?: "") {
                     replies.claim(result, it)
