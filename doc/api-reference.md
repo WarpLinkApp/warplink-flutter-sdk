@@ -148,7 +148,7 @@ static Future<bool> isWarpLinkUrl(String url)
 static Future<String> sdkVersion()
 ```
 
-The version the native SDK reports, for example `1.4.0`. This is the version sent on the wire, not the package version. The package constant is `warplinkFlutterVersion`.
+The version the native SDK reports, for example `1.4.1`. This is the version sent on the wire, not the package version. The package constant is `warplinkFlutterVersion`.
 
 #### `redeemInvitation`
 
@@ -229,7 +229,7 @@ Takes the URL that launched the app, once, and resolves it. The second call retu
 | Name | Value | Description |
 |------|-------|-------------|
 | `defaultApiEndpoint` | `https://api.warplink.app/v1` | Default `apiEndpoint` |
-| `warplinkFlutterVersion` | `1.4.0` | Version of the Dart package |
+| `warplinkFlutterVersion` | `1.4.1` | Version of the Dart package |
 
 ## Types
 

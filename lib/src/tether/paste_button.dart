@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:warplink_flutter/src/channel.dart';
 import 'package:warplink_flutter/src/errors.dart';
 import 'package:warplink_flutter/src/sdk_calls.dart';

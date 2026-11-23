@@ -272,7 +272,7 @@ WarpLinkPasteButton(
 );
 ```
 
-Keep your own way to continue next to the button. It takes no space on Android and below iOS 16. Android reads no clipboard in any mode, so `readTether()` returns `TetherNoCode` there.
+Keep your own way to continue next to the button. It takes no space on Android and below iOS 16. Android reads no clipboard in any mode, so `readTether()` returns `TetherNoCode` there. How Tether works end to end: [warplink.app/docs/tether](https://warplink.app/docs/tether).
 
 With a `wl_test_` key a test code (`wl1t_`) records nothing. `await WarpLink.lastTetherTestReceipt()` returns the receipt the server sent.
 

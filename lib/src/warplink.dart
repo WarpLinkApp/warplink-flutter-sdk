@@ -130,7 +130,7 @@ abstract final class WarpLink {
   static Future<String?> lastTetherTestReceipt() =>
       _calls.lastTetherTestReceipt();
 
-  /// The version the native SDK sends on the wire, for example `1.4.0`.
+  /// The version the native SDK sends on the wire, for example `1.4.1`.
   static Future<String> sdkVersion() => _calls.sdkVersion();
 
   /// Whether install attribution has completed for this install.

@@ -33,7 +33,7 @@ All methods are asynchronous. Native replies on the platform (main) thread. Argu
 | `isConfigured` | none | `bool` |
 | `isAttributionComplete` | none | `bool` |
 | `getDeferredCheckStatus` | none | deferred check status map (section 3.6). Read-only: it sends no request |
-| `getSdkVersion` | none | `String`: the NATIVE SDK constant (`"1.4.0"`), never the pub package version |
+| `getSdkVersion` | none | `String`: the NATIVE SDK constant (`"1.4.1"`), never the pub package version |
 | `getPendingArrivals` | none | `List<Map>` of ledger entries, oldest first (section 4.3) |
 | `resolveArrival` | `{ "arrivalId": String }` | deep link map, or `null`. Claims the arrival; join semantics (section 4.4) |
 | `claimDelivery` | `{ "arrivalId": String }` | `bool`. `true` to the first claim only (section 4.5) |
