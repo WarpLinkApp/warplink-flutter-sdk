@@ -1,5 +1,5 @@
 group = "app.warplink.flutter"
-version = "1.3.0"
+version = "1.4.0"
 
 buildscript {
     val kotlinVersion = "2.4.0"
@@ -60,7 +60,7 @@ kotlin {
 }
 
 dependencies {
-    implementation("app.warplink:sdk:1.3.0")
+    implementation("app.warplink:sdk:1.4.0")
 
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.jetbrains.kotlin:kotlin-test")

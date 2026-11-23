@@ -429,6 +429,16 @@ adb shell am start -a android.intent.action.VIEW \
 - Verify assetlinks.json: `curl https://yourapp.aplnk.to/.well-known/assetlinks.json`
 - See [Troubleshooting](troubleshooting.md) for common issues
 
+## Optional: Tether handoff
+
+Use this when links open in a browser that cannot open your app. The link page puts a short code on the clipboard, and the app reads it after install.
+
+1. Leave `tetherReadMode` at its default, `TetherReadMode.pasteButton`. The SDK then never reads the clipboard by itself.
+2. Put a `WarpLinkPasteButton` on the first screen after install, next to your own way to continue. Handle every `TetherReadResult` case in `onResult`.
+3. To test, use a `wl_test_` key and a test code (`wl1t_`). `WarpLink.lastTetherTestReceipt()` returns the receipt.
+
+Other modes: `automatic` reads once during the first-launch check and iOS may show its paste alert. `onCall` reads only when you call `WarpLink.readTether()`. Android reads no clipboard in any mode.
+
 ## Next Steps
 
 - [API Reference](api-reference.md): full documentation of all public types and methods

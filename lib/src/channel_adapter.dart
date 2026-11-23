@@ -1,6 +1,7 @@
 import 'package:warplink_flutter/src/arrival.dart';
 import 'package:warplink_flutter/src/channel.dart';
 import 'package:warplink_flutter/src/deep_link.dart';
+import 'package:warplink_flutter/src/deferred_check_status.dart';
 import 'package:warplink_flutter/src/errors.dart';
 import 'package:warplink_flutter/src/ledger_signal.dart';
 
@@ -71,6 +72,12 @@ final class ChannelAdapter {
   /// Whether install attribution has completed for this install.
   Future<bool> isAttributionComplete() async =>
       await _channel.invoke(WarpLinkMethod.isAttributionComplete) == true;
+
+  /// Where the native deferred check stands. Sends no request.
+  Future<DeferredCheckStatus> deferredCheckStatus() async =>
+      DeferredCheckStatus.fromMap(
+        await _channel.invoke(WarpLinkMethod.getDeferredCheckStatus),
+      );
 
   /// Runs the native deferred check. `null` is a confirmed no-match.
   Future<WarpLinkDeepLink?> checkDeferredDeepLink() =>

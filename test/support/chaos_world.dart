@@ -132,6 +132,8 @@ final class ChaosWorld {
     _calls.add(
       WarpLink.configure(
         apiKey: validKey,
+        // Alternating options keep every call a new native configuration.
+        debugLogging: epoch.isOdd,
         automaticDeepLinks: random.nextBool(),
         onLink: (event) => _record(sink, event),
       ),

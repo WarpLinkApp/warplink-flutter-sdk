@@ -4,7 +4,9 @@ import WarpLink
 /// The parsed `configure` arguments (channel contract section 2.1).
 ///
 /// The automatic switches are not read: the plugin always configures native
-/// with both automatic paths off, whatever Dart sends.
+/// with both automatic paths off, whatever Dart sends. The Tether read mode is
+/// read: an unknown value falls back to the default, so a typo never switches
+/// a clipboard read on.
 struct ConfigureRequest: Equatable {
     private static let keyPattern = "^wl_(live|test)_[a-zA-Z0-9]{32}\\z"
 
@@ -12,6 +14,7 @@ struct ConfigureRequest: Equatable {
     let apiEndpoint: String
     let debugLogging: Bool
     let linkDomains: [String]
+    let tetherReadMode: TetherReadMode
 
     /// The native options for this request: both automatic paths off and no
     /// `onLink` sink, because Dart owns all link dispatch.
@@ -22,6 +25,7 @@ struct ConfigureRequest: Equatable {
             autoDeepLinkHandling: false,
             autoDeferredCheck: false,
             linkDomains: linkDomains,
+            tetherReadMode: tetherReadMode,
             onLink: nil
         )
     }
@@ -42,12 +46,14 @@ struct ConfigureRequest: Equatable {
         }
         let defaults = WarpLinkOptions()
         let domains = (map["linkDomains"] as? [Any])?.compactMap { $0 as? String } ?? []
+        let mode = (map["tetherReadMode"] as? String).flatMap(TetherReadMode.init(rawValue:))
         return .success(
             ConfigureRequest(
                 apiKey: apiKey,
                 apiEndpoint: map["apiEndpoint"] as? String ?? defaults.apiEndpoint,
                 debugLogging: map["debugLogging"] as? Bool ?? defaults.debugLogging,
-                linkDomains: domains
+                linkDomains: domains,
+                tetherReadMode: mode ?? defaults.tetherReadMode
             )
         )
     }

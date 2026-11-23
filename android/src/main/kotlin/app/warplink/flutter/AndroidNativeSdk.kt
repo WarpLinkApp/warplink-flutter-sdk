@@ -2,7 +2,9 @@ package app.warplink.flutter
 
 import android.content.Context
 import android.net.Uri
+import app.warplink.DeferredCheckStatus
 import app.warplink.ReferralClaimResult
+import app.warplink.TetherReadResult
 import app.warplink.WarpLink
 import app.warplink.WarpLinkDeepLink
 import app.warplink.WarpLinkOptions
@@ -17,6 +19,12 @@ class AndroidNativeSdk : NativeSdk {
 
     override val attributionResult: WarpLinkDeepLink?
         get() = WarpLink.attributionResult
+
+    override val lastTetherTestReceipt: String?
+        get() = WarpLink.lastTetherTestReceipt
+
+    override val deferredCheckStatus: DeferredCheckStatus
+        get() = WarpLink.deferredCheckStatus
 
     override fun isAttributionComplete(): Boolean = WarpLink.isAttributionComplete()
 
@@ -53,5 +61,9 @@ class AndroidNativeSdk : NativeSdk {
 
     override fun claimReferral(installerId: String, callback: (Result<ReferralClaimResult>) -> Unit) {
         WarpLink.claimReferral(installerId, callback)
+    }
+
+    override fun readTether(callback: (Result<TetherReadResult>) -> Unit) {
+        WarpLink.readTether(callback)
     }
 }

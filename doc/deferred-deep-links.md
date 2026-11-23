@@ -153,7 +153,7 @@ void routeDeferred(WarpLinkDeepLink link) {
 ## Caching Behavior
 
 - The SDK checks for a deferred deep link only on the first launch of an install.
-- The first-launch marker is split into "attempted" and "completed". It is consumed only on a definitive server response. If the first attempt fails (for example offline), the check retries on the next launch.
+- The first-launch marker is split into "attempted" and "completed". It is consumed only on a definitive server response. If the first attempt fails (for example offline), the check tries again on a later launch, after a wait that grows with each failure.
 - The result, match or no match, is cached by the native SDK once completed.
 - Later calls to `checkDeferredDeepLink()` return that cached result without a network request: the same match if one was found, `null` if there was none.
 - The attribution check completes exactly once per app install.
@@ -162,7 +162,7 @@ void routeDeferred(WarpLinkDeepLink link) {
 
 ### Offline First Launch
 
-If the device has no network connectivity on first launch, the check fails with `WarpLinkNetworkException` (`E_NETWORK_ERROR`). It surfaces through `onLink` as an `ErrorEvent`, or as a thrown exception from a manual `checkDeferredDeepLink()` call. The first-launch marker is **not** consumed on a failed attempt, so the check retries on the next launch once connectivity is restored.
+If the device has no network connectivity on first launch, the check fails with `WarpLinkNetworkException` (`E_NETWORK_ERROR`). It surfaces through `onLink` as an `ErrorEvent`, or as a thrown exception from a manual `checkDeferredDeepLink()` call. The first-launch marker is **not** consumed on a failed attempt, so the check tries again on a later launch, after a wait, once connectivity is restored.
 
 **Recommendation:** Handle the error gracefully and show your default first-launch experience. The retry happens on its own.
 

@@ -1,14 +1,18 @@
 import Foundation
-import WarpLink
+@_spi(Flutter) import WarpLink
 
 /// Forwards every call to the native WarpLink SDK singleton.
 struct LiveWarpLinkNative: WarpLinkNative {
     var isConfigured: Bool { WarpLink.isConfigured }
     var isAttributionComplete: Bool { WarpLink.isAttributionComplete }
+    var deferredCheckStatus: DeferredCheckStatus { WarpLink.deferredCheckStatus }
     var attributionResult: WarpLinkDeepLink? { WarpLink.attributionResult }
     var sdkVersion: String { WarpLink.sdkVersion }
+    var lastTetherTestReceipt: String? { WarpLink.lastTetherTestReceipt }
 
     func configure(apiKey: String, options: WarpLinkOptions) {
+        // Tether reports this as the request's sdk_platform, not "ios".
+        WarpLink.declareHostWrapper("flutter")
         WarpLink.configure(apiKey: apiKey, options: options)
     }
 
@@ -45,5 +49,11 @@ struct LiveWarpLinkNative: WarpLinkNative {
         completion: @escaping (Result<ReferralClaimResult, WarpLinkError>) -> Void
     ) {
         WarpLink.claimReferral(installerId: installerId, completion: completion)
+    }
+
+    func readTether(
+        completion: @escaping (Result<TetherReadResult, WarpLinkError>) -> Void
+    ) {
+        WarpLink.readTether(completion: completion)
     }
 }

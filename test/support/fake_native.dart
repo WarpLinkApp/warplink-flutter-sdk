@@ -85,6 +85,9 @@ final class FakeNative {
     handlers[WarpLinkMethod.handleDeepLink] = (args) =>
         resolveUrl(args['url']! as String);
     handlers[WarpLinkMethod.isAttributionComplete] = (_) => true;
+    handlers[WarpLinkMethod.getDeferredCheckStatus] = (_) => <String, Object?>{
+      'state': 'matched',
+    };
   }
 
   final Map<String, MethodHandler> handlers = <String, MethodHandler>{};

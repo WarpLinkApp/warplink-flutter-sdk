@@ -1,8 +1,10 @@
 package app.warplink.flutter
 
 import android.content.Context
+import app.warplink.DeferredCheckStatus
 import app.warplink.MatchType
 import app.warplink.ReferralClaimResult
+import app.warplink.TetherReadResult
 import app.warplink.WarpLinkDeepLink
 import app.warplink.referral.ReferralClaimStatus
 
@@ -35,10 +37,12 @@ class TestClock(var now: Long = 1_000L) {
  * [held] until [finishHeld] delivers it.
  */
 class FakeSdk : NativeSdk {
-    override val sdkVersion = "1.3.0"
+    override val sdkVersion = "1.4.0"
     override var isConfigured = false
     override var attributionResult: WarpLinkDeepLink? = null
     var attributionComplete = false
+    override var deferredCheckStatus: DeferredCheckStatus = DeferredCheckStatus.NotChecked
+    var deferredChecks = 0
     var warpLinkHosts = setOf("aplnk.to")
     var holdResolves = false
     var handleOutcome: (String) -> Result<WarpLinkDeepLink> = { Result.success(sampleLink(it)) }
@@ -48,6 +52,9 @@ class FakeSdk : NativeSdk {
         Result.success(ReferralClaimResult(status = ReferralClaimStatus.NONE))
 
     var clearOutcome: Result<Unit> = Result.success(Unit)
+    var tetherOutcome: Result<TetherReadResult> = Result.success(TetherReadResult.NoClipboard)
+    override var lastTetherTestReceipt: String? = null
+    var tetherReads = 0
 
     val redeemed = mutableListOf<String>()
     val claimed = mutableListOf<String>()
@@ -73,6 +80,7 @@ class FakeSdk : NativeSdk {
         url.substringAfter("://", "").substringBefore("/") in warpLinkHosts
 
     override fun checkDeferredDeepLink(callback: (Result<WarpLinkDeepLink?>) -> Unit) {
+        deferredChecks++
         callback(deferredOutcome)
     }
 
@@ -89,6 +97,11 @@ class FakeSdk : NativeSdk {
     override fun claimReferral(installerId: String, callback: (Result<ReferralClaimResult>) -> Unit) {
         claimed.add(installerId)
         callback(claimOutcome)
+    }
+
+    override fun readTether(callback: (Result<TetherReadResult>) -> Unit) {
+        tetherReads++
+        callback(tetherOutcome)
     }
 
     /** Delivers the answer of the oldest held native resolve. */

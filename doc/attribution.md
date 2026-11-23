@@ -171,7 +171,7 @@ switch (claim.status) {
 }
 ```
 
-The SDK never reads the clipboard: your app decides what text to pass. An invitation that a network failure delayed is kept by the native SDK and finished on a later launch. That result is delivered through `getAttributionResult()` and `claimReferral`, not through `onLink`. Check `evidenceClass` before you give a reward. `exact` rests on exact evidence, `estimated` on an estimate, and `legacy_link` on the link id alone. A `null` value means the source is not known and is never exact.
+`redeemInvitation` never reads the clipboard: your app decides what text to pass. The separate Tether handoff reads the clipboard only in the mode you choose (see the README). An invitation that a network failure delayed is kept by the native SDK and finished on a later launch. That result is delivered through `getAttributionResult()` and `claimReferral`, not through `onLink`. Check `evidenceClass` before you give a reward. `exact` rests on exact evidence, `estimated` on an estimate, and `legacy_link` on the link id alone. A `null` value means the source is not known and is never exact.
 
 ## Privacy Considerations
 

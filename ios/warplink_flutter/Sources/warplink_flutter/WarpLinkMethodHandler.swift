@@ -24,6 +24,7 @@ final class WarpLinkMethodHandler: @unchecked Sendable {
         case "getAttributionResult": getAttributionResult(result: result)
         case "isConfigured": result(native.isConfigured)
         case "isAttributionComplete": result(native.isAttributionComplete)
+        case "getDeferredCheckStatus": result(DeferredStatusPayload.status(native.deferredCheckStatus))
         case "getSdkVersion": result(native.sdkVersion)
         case "getPendingArrivals": getPendingArrivals(result: result)
         case "resolveArrival": resolveArrival(call.arguments, result: result)
@@ -31,6 +32,9 @@ final class WarpLinkMethodHandler: @unchecked Sendable {
         case "redeemInvitation": redeemInvitation(call.arguments, result: result)
         case "claimReferral": claimReferral(call.arguments, result: result)
         case "clearAttribution": clearAttribution(result: result)
+        case "readTether": readTether(result: result)
+        case "getTetherTestReceipt": result(native.lastTetherTestReceipt)
+        case "isPasteButtonSupported": result(PasteButtonSupport.isSupported)
         default: result(FlutterMethodNotImplemented)
         }
     }
@@ -139,6 +143,19 @@ final class WarpLinkMethodHandler: @unchecked Sendable {
         process.native.claimReferral(installerId: installerId) { outcome in
             switch outcome {
             case .success(let claim): result(ReferralPayload.claim(claim))
+            case .failure(let error): result(ContractError.from(error).flutterError)
+            }
+        }
+    }
+
+    // MARK: - Tether
+
+    /// Native reads the clipboard and sends only a WarpLink code. No clipboard
+    /// text crosses the channel.
+    private func readTether(result: @escaping FlutterResult) {
+        process.native.readTether { outcome in
+            switch outcome {
+            case .success(let read): result(TetherPayload.result(read))
             case .failure(let error): result(ContractError.from(error).flutterError)
             }
         }

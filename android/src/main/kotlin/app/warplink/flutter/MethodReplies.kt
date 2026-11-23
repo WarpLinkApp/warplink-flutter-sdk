@@ -1,6 +1,7 @@
 package app.warplink.flutter
 
 import app.warplink.ReferralClaimResult
+import app.warplink.TetherReadResult
 import app.warplink.WarpLinkDeepLink
 import io.flutter.plugin.common.MethodChannel
 
@@ -32,6 +33,14 @@ class MethodReplies(private val main: MainThread) {
 
     /** Replies with the claim map or the mapped error of [outcome]. */
     fun claim(result: MethodChannel.Result, outcome: Result<ReferralClaimResult>) {
+        outcome.fold(
+            onSuccess = { success(result, it.toChannelMap()) },
+            onFailure = { error(result, it) }
+        )
+    }
+
+    /** Replies with the Tether read map or the mapped error of [outcome]. */
+    fun tether(result: MethodChannel.Result, outcome: Result<TetherReadResult>) {
         outcome.fold(
             onSuccess = { success(result, it.toChannelMap()) },
             onFailure = { error(result, it) }

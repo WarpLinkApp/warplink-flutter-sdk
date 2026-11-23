@@ -28,7 +28,14 @@ enum MatchMethod {
   final String wireValue;
 
   /// Parses a channel value. Returns `null` for anything unrecognized.
+  ///
+  /// The server names the install referrer match `referrer`, and rows from
+  /// before that name carry `android_referrer`. Both read as
+  /// [androidReferrer].
   static MatchMethod? fromWire(Object? value) {
+    if (value == _serverReferrer) {
+      return androidReferrer;
+    }
     for (final method in values) {
       if (method.wireValue == value) {
         return method;
@@ -36,6 +43,8 @@ enum MatchMethod {
     }
     return null;
   }
+
+  static const String _serverReferrer = 'referrer';
 }
 
 /// How strong the evidence behind an attribution is.

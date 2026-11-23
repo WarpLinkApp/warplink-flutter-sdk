@@ -37,6 +37,8 @@ class WarpLinkMethodHandler(
             "getAttributionResult" -> attributionResult(result)
             "isConfigured" -> replies.success(result, sdk.isConfigured)
             "isAttributionComplete" -> replies.success(result, sdk.isAttributionComplete())
+            "getDeferredCheckStatus" ->
+                replies.success(result, sdk.deferredCheckStatus.toChannelMap())
             "getSdkVersion" -> replies.success(result, sdk.sdkVersion)
             "redeemInvitation" ->
                 sdk.redeemInvitation(call.stringArgument("text") ?: "") { replies.link(result, it) }
@@ -45,6 +47,9 @@ class WarpLinkMethodHandler(
                 sdk.claimReferral(call.stringArgument("installerId") ?: "") {
                     replies.claim(result, it)
                 }
+            "readTether" -> sdk.readTether { replies.tether(result, it) }
+            "getTetherTestReceipt" -> replies.success(result, sdk.lastTetherTestReceipt)
+            "isPasteButtonSupported" -> replies.success(result, false)
             "getPendingArrivals" -> arrivals.getPendingArrivals(result)
             "resolveArrival" -> arrivals.resolveArrival(call, result)
             "claimDelivery" -> arrivals.claimDelivery(call, result)

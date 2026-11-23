@@ -23,6 +23,7 @@ void main() {
         'linkDomains': <String>[],
         'automaticDeepLinks': false,
         'automaticDeferredDeepLinks': false,
+        'tetherReadMode': 'paste_button',
       });
     });
 

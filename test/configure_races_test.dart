@@ -28,7 +28,11 @@ void main() {
       final second = <WarpLinkEvent>[];
       final firstDone = WarpLink.configure(apiKey: validKey, onLink: first.add);
       await pump();
-      await WarpLink.configure(apiKey: validKey, onLink: second.add);
+      await WarpLink.configure(
+        apiKey: validKey,
+        debugLogging: true,
+        onLink: second.add,
+      );
       firstReply.completeError(
         PlatformException(code: 'E_NETWORK_ERROR', message: 'offline'),
       );
@@ -45,7 +49,11 @@ void main() {
       await pump();
       native.handlers[WarpLinkMethod.configure] = (_) =>
           throw PlatformException(code: 'E_NETWORK_ERROR', message: 'offline');
-      await WarpLink.configure(apiKey: validKey, onLink: second.add);
+      await WarpLink.configure(
+        apiKey: validKey,
+        debugLogging: true,
+        onLink: second.add,
+      );
       firstReply.complete(null);
       await firstDone;
       expect(first, isEmpty);
@@ -60,7 +68,11 @@ void main() {
       () async {
         final firstDone = WarpLink.configure(apiKey: validKey);
         await pump();
-        await WarpLink.configure(apiKey: validKey, onLink: (_) {});
+        await WarpLink.configure(
+          apiKey: validKey,
+          debugLogging: true,
+          onLink: (_) {},
+        );
         firstReply.completeError(
           PlatformException(code: 'E_INVALID_API_KEY', message: 'rejected'),
         );

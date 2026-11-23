@@ -26,6 +26,7 @@ static Future<void> configure({
   List<String> linkDomains = const <String>[],
   bool automaticDeepLinks = true,
   bool automaticDeferredDeepLinks = true,
+  TetherReadMode tetherReadMode = TetherReadMode.pasteButton,
   WarpLinkListener? onLink,
 })
 ```
@@ -38,6 +39,7 @@ static Future<void> configure({
 | `linkDomains` | `List<String>` | `[]` | Extra hosts that serve your links, on top of `aplnk.to` |
 | `automaticDeepLinks` | `bool` | `true` | Deliver cold-start and warm-start links to `onLink`. Only takes effect when `onLink` is set |
 | `automaticDeferredDeepLinks` | `bool` | `true` | Run the install attribution check from `configure`. Runs with or without `onLink` |
+| `tetherReadMode` | `TetherReadMode` | `pasteButton` | How the SDK gets a Tether code from the clipboard. See [`TetherReadMode`](#tetherreadmode). Android ignores it |
 | `onLink` | `WarpLinkListener?` | `null` | The single sink for cold-start, warm-start, and deferred links |
 
 **Behavior**
@@ -47,7 +49,8 @@ static Future<void> configure({
 - An exception thrown by your `onLink` while `configure` delivers a rejected key or a configuration error propagates out of the future. For a link that arrives later, an exception from `onLink` surfaces as an uncaught error and does not stop the SDK. That link is not delivered again.
 - The future completes when native configuration completes. It does not wait for the first cold-start or deferred delivery.
 - Calling `configure` again replaces the earlier configuration and callback. Only the newest `onLink` receives links. A link that was still resolving goes to the newest callback and is not delivered twice.
-- The deferred check starts after the launch link is delivered or dropped. A match reaches `onLink` once. A check that fails (for example offline) reaches `onLink` as an `ErrorEvent` and leaves the once-per-install gate open, so the next launch retries.
+- Calling `configure` again with the same key and the same options keeps the running session and does not configure the native SDK again. Only `onLink` is replaced. If the first-launch check has not finished and none is running, the call asks the native SDK for one more check, at most once a minute. The native SDK decides whether that sends a request.
+- The deferred check starts after the launch link is delivered or dropped. A match reaches `onLink` once. A check that fails (for example offline) reaches `onLink` as an `ErrorEvent` and leaves the once-per-install gate open, so a later launch tries again, after a wait that grows with each failure.
 
 #### `handleDeepLink`
 
@@ -103,6 +106,26 @@ static Future<bool> isAttributionComplete()
 
 `true` once the install check has finished with a definitive server answer, a match or a confirmed no-match. A failed check leaves it `false`.
 
+#### `getDeferredCheckStatus`
+
+```dart
+static Future<DeferredCheckStatus> getDeferredCheckStatus()
+```
+
+Tells a check the SDK skipped from a check that found no match. It sends no request and comes from state stored on the device, so a relaunch keeps it. `state` is a `DeferredCheckState`:
+
+| `state` | Meaning |
+|---------|---------|
+| `notChecked` | No check has finished and none is running. A failed check whose wait is over reads this too. |
+| `checking` | A check is running, or waiting for the app to come on screen. |
+| `matched` | The check finished and found a link. |
+| `noMatch` | The check finished and found no link. |
+| `waiting` | A check failed. No request is sent before `retryAt`, a `DateTime`. |
+| `skippedOldInstall` | The install is older than 30 days by default, so no request is sent. |
+| `stopped` | The SDK gave up, 3 days by default after the first failure. No request is sent. |
+
+A `wl_test_` key never reports `waiting`, `skippedOldInstall` or `stopped`. A malformed native reply throws `WarpLinkDecodingException`.
+
 #### `isConfigured`
 
 ```dart
@@ -125,7 +148,7 @@ static Future<bool> isWarpLinkUrl(String url)
 static Future<String> sdkVersion()
 ```
 
-The version the native SDK reports, for example `1.3.0`. This is the version sent on the wire, not the package version. The package constant is `warplinkFlutterVersion`.
+The version the native SDK reports, for example `1.4.0`. This is the version sent on the wire, not the package version. The package constant is `warplinkFlutterVersion`.
 
 #### `redeemInvitation`
 
@@ -133,7 +156,7 @@ The version the native SDK reports, for example `1.3.0`. This is the version sen
 static Future<WarpLinkDeepLink?> redeemInvitation(String text)
 ```
 
-Redeems the invitation in `text`, which the person pasted. Pass the text as pasted: the native SDK decides whether it is an invitation and whether it has expired. The SDK never reads the clipboard.
+Redeems the invitation in `text`, which the person pasted. Pass the text as pasted: the native SDK decides whether it is an invitation and whether it has expired. This method never reads the clipboard.
 
 Returns the matched link, or `null` when the text is not an invitation or matched nothing. Nothing is confirmed then, so do not tell the person a referral was applied. A refused invitation throws `WarpLinkServerException` with a message that says how to open the link again. After a `WarpLinkNetworkException` the native SDK keeps the invitation and tries again on a later launch, a bounded number of times. That later result is delivered through `getAttributionResult()` and `claimReferral`, not through `onLink`. Onboarding does not need to wait on this call.
 
@@ -158,6 +181,24 @@ Forgets this install's attribution so the next first launch can be tested again:
 Test only. With a `wl_live_` key this does nothing and completes, so it can never erase a live install's attribution. With a `wl_test_` key and `automaticDeferredDeepLinks` on, a check in flight is discarded and a fresh check starts; its match reaches `onLink`.
 
 Throws `WarpLinkNotConfiguredException` before `configure`, and `WarpLinkDecodingException`, with the message "Could not clear stored attribution data.", when a stored item could not be deleted and some state may remain. Calling again is safe.
+
+#### `readTether`
+
+```dart
+static Future<TetherReadResult> readTether()
+```
+
+Reads the clipboard once, sends the Tether code it holds, and returns what happened. It works in every `TetherReadMode`. On iOS the system may show its paste alert, so call it after the person acts, not at launch. Android reads no clipboard and always returns `TetherNoCode(null)`.
+
+A match is also stored as the attribution result. A failure throws a `WarpLinkException`, and the call throws `WarpLinkNotConfiguredException` before `configure`. Use a `switch` over the sealed [`TetherReadResult`](#tetherreadresult).
+
+#### `lastTetherTestReceipt`
+
+```dart
+static Future<String?> lastTetherTestReceipt()
+```
+
+The receipt of the last test code (`wl1t_`) the server accepted, or `null`. A test code records nothing and holds a value only with a `wl_test_` key.
 
 #### `onDeepLink`
 
@@ -188,7 +229,7 @@ Takes the URL that launched the app, once, and resolves it. The second call retu
 | Name | Value | Description |
 |------|-------|-------------|
 | `defaultApiEndpoint` | `https://api.warplink.app/v1` | Default `apiEndpoint` |
-| `warplinkFlutterVersion` | `1.3.0` | Version of the Dart package |
+| `warplinkFlutterVersion` | `1.4.0` | Version of the Dart package |
 
 ## Types
 
@@ -301,6 +342,54 @@ enum ReferralClaimStatus { claimed, flagged, ignored, none }
 ```
 
 Each has a `wireValue` string (`install_token`, `legacy_link`, and so on) and a static `fromWire` that returns `null` for an unknown string.
+
+### `TetherReadMode`
+
+```dart
+enum TetherReadMode { pasteButton, automatic, onCall }
+```
+
+`pasteButton` (default): the SDK never reads the clipboard by itself, and the person taps `WarpLinkPasteButton`. `automatic`: the SDK reads once during the first-launch check, and iOS may show its paste alert. `onCall`: the SDK reads only in `readTether()`. Each has a `wireValue` (`paste_button`, `automatic`, `on_call`).
+
+### `TetherReadResult`
+
+A sealed class. A failure is a thrown exception, never one of these.
+
+| Subclass | Field | Meaning |
+|----------|-------|---------|
+| `TetherMatched` | `link` (`WarpLinkDeepLink`) | The code led to this link |
+| `TetherNoCode` | `reason` (`TetherMissReason?`) | No code was read and nothing was sent. `null` on Android |
+| `TetherUnusable` | none | A code was sent and led nowhere. Let the person continue |
+| `TetherTest` | `receipt` (`String?`) | A test code reached the server and nothing was recorded |
+
+A payload this version cannot decode is `TetherUnusable`. All four have value equality.
+
+### `TetherMissReason`
+
+```dart
+enum TetherMissReason {
+  pasteNotAllowed, clipboardEmpty, inAppBrowser, expired, otherApp, linkEnded, olderSdk,
+}
+```
+
+The SDK reports `pasteNotAllowed`, `clipboardEmpty` and `olderSdk`. The server sets the others. Each has a `wireValue` and a static `fromWire` that returns `null` for an unknown string.
+
+### `WarpLinkPasteButton`
+
+```dart
+const WarpLinkPasteButton({
+  required ValueChanged<TetherReadResult> onResult,
+  ValueChanged<WarpLinkException>? onError,
+  double width = 160,
+  double height = 44,
+  Color? baseBackgroundColor,
+  Color? baseForegroundColor,
+  PasteButtonCornerStyle cornerStyle = PasteButtonCornerStyle.system,
+  PasteButtonDisplayMode displayMode = PasteButtonDisplayMode.iconAndLabel,
+})
+```
+
+The iOS system paste control. A tap reads the clipboard, sends the code and calls `onResult`, and iOS shows no paste alert. Dart never sees the pasted text. The widget takes no space on Android and below iOS 16, so keep your own way to continue next to it. `PasteButtonCornerStyle` is `system`, `fixed`, `small`, `medium`, `large` or `capsule`. `PasteButtonDisplayMode` is `iconAndLabel`, `iconOnly` or `labelOnly`.
 
 ## Error Types
 

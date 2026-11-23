@@ -31,6 +31,9 @@ abstract final class WarpLinkMethod {
   /// Reads whether install attribution has completed.
   static const String isAttributionComplete = 'isAttributionComplete';
 
+  /// Reads where the deferred check stands, without sending anything.
+  static const String getDeferredCheckStatus = 'getDeferredCheckStatus';
+
   /// Lists the arrivals the native ledger still holds.
   static const String getPendingArrivals = 'getPendingArrivals';
 
@@ -51,6 +54,15 @@ abstract final class WarpLinkMethod {
 
   /// Claims the referral behind this install.
   static const String claimReferral = 'claimReferral';
+
+  /// Reads the clipboard once and sends a Tether code, if one is there.
+  static const String readTether = 'readTether';
+
+  /// Reads the receipt of the last test Tether read.
+  static const String getTetherTestReceipt = 'getTetherTestReceipt';
+
+  /// Reads whether the native paste control can show on this device.
+  static const String isPasteButtonSupported = 'isPasteButtonSupported';
 }
 
 /// Typed access to the plugin's platform channels.

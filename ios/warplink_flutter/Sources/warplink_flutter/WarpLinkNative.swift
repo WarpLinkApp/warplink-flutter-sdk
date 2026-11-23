@@ -10,8 +10,11 @@ import WarpLink
 protocol WarpLinkNative: Sendable {
     var isConfigured: Bool { get }
     var isAttributionComplete: Bool { get }
+    /// Where the deferred check stands. Sends no request.
+    var deferredCheckStatus: DeferredCheckStatus { get }
     var attributionResult: WarpLinkDeepLink? { get }
     var sdkVersion: String { get }
+    var lastTetherTestReceipt: String? { get }
 
     func configure(apiKey: String, options: WarpLinkOptions)
     func handleDeepLink(
@@ -32,5 +35,9 @@ protocol WarpLinkNative: Sendable {
     func claimReferral(
         installerId: String,
         completion: @escaping (Result<ReferralClaimResult, WarpLinkError>) -> Void
+    )
+    /// Reads the clipboard once and sends a Tether code, if one is there.
+    func readTether(
+        completion: @escaping (Result<TetherReadResult, WarpLinkError>) -> Void
     )
 }

@@ -173,7 +173,7 @@ That is the whole happy path. `onLink` receives one delivery for every tap, and 
 
 An exception thrown by your `onLink` while `configure` delivers a rejected key or a configuration error propagates out of the future that `configure` returns. An exception thrown for a link that arrives later surfaces as an uncaught error and does not stop the SDK. That link is not delivered again.
 
-A background deferred check that cannot finish, for example on a launch with no network, stays open and retries on the next launch.
+A background deferred check that cannot finish, for example on a launch with no network, stays open and tries again on a later launch, after a wait that grows with each failure.
 
 ### Getting your SDK key
 
@@ -249,6 +249,32 @@ The deferred check still fires without `onLink`, because that request is what at
 - **`onLink` and `onDeepLink` are separate.** `onLink` receives only WarpLink links, from the automatic path. `onDeepLink` receives every URL the app is opened with, including foreign URLs as an `E_INVALID_URL` error, and does not apply the 1.5 second rule. A tap resolves once and both see the same result.
 - **`getInitialDeepLink` and `onLink` do not overlap.** With the automatic path on, the launch link goes to `onLink` and `getInitialDeepLink()` returns `null`.
 - **Deferred installs** arrive through `onLink` with `isDeferred: true`, after the launch link has been delivered or dropped.
+
+## Tether handoff
+
+A tap in a browser that cannot open your app can still reach your install. The link page puts a short code on the clipboard, and the app reads it after install. `tetherReadMode` in `configure` says how the app reads it:
+
+| Mode | What reads the clipboard |
+|------|--------------------------|
+| `TetherReadMode.pasteButton` (default) | The person taps `WarpLinkPasteButton`, the iOS system paste control. iOS shows no paste alert. |
+| `TetherReadMode.automatic` | The SDK reads once, during the first-launch check. iOS may show its paste alert. |
+| `TetherReadMode.onCall` | The SDK reads only when you call `WarpLink.readTether()`. |
+
+```dart
+await WarpLink.configure(apiKey: 'wl_live_...', tetherReadMode: TetherReadMode.pasteButton);
+
+// In your onboarding screen:
+WarpLinkPasteButton(
+  onResult: (result) => switch (result) {
+    TetherMatched(:final link) => navigateTo(link.deepLinkUrl ?? link.destination),
+    TetherNoCode() || TetherUnusable() || TetherTest() => continueWithoutLink(),
+  },
+);
+```
+
+Keep your own way to continue next to the button. It takes no space on Android and below iOS 16. Android reads no clipboard in any mode, so `readTether()` returns `TetherNoCode` there.
+
+With a `wl_test_` key a test code (`wl1t_`) records nothing. `await WarpLink.lastTetherTestReceipt()` returns the receipt the server sent.
 
 ## Deferred deep links and attribution
 

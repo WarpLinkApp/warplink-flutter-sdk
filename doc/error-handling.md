@@ -210,7 +210,7 @@ await WarpLink.configure(
 );
 ```
 
-Listener errors occur when the native layer receives a URL but resolution fails (network error, link not found, and so on). A failing background deferred check on a launch with no network also arrives here. The gate stays open and the next launch retries, so treat that error as a report.
+Listener errors occur when the native layer receives a URL but resolution fails (network error, link not found, and so on). A failing background deferred check on a launch with no network also arrives here. The gate stays open and a later launch tries again, so treat that error as a report.
 
 ## Related Guides
 

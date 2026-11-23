@@ -35,6 +35,10 @@ public final class WarpLinkFlutterPlugin: NSObject, FlutterPlugin, FlutterSceneL
         )
         FlutterEventChannel(name: arrivalsChannelName, binaryMessenger: messenger)
             .setStreamHandler(plugin.arrivals)
+        registrar.register(
+            PasteButtonFactory(messenger: messenger),
+            withId: PasteButtonFactory.viewType
+        )
         registrar.addApplicationDelegate(plugin)
         registrar.addSceneDelegate(plugin)
         if UIApplication.shared.applicationState == .active {

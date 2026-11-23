@@ -14,9 +14,9 @@ void main() {
 
   group('state queries', () {
     test('sdkVersion returns the native version', () async {
-      native.handlers[WarpLinkMethod.getSdkVersion] = (_) => '1.3.0';
-      expect(await WarpLink.sdkVersion(), '1.3.0');
-      expect(warplinkFlutterVersion, '1.3.0');
+      native.handlers[WarpLinkMethod.getSdkVersion] = (_) => '1.4.0';
+      expect(await WarpLink.sdkVersion(), '1.4.0');
+      expect(warplinkFlutterVersion, '1.4.0');
     });
 
     test('sdkVersion rejects a non-string', () async {

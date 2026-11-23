@@ -1,7 +1,9 @@
 package app.warplink.flutter
 
 import android.content.Context
+import app.warplink.DeferredCheckStatus
 import app.warplink.ReferralClaimResult
+import app.warplink.TetherReadResult
 import app.warplink.WarpLinkDeepLink
 
 /**
@@ -14,6 +16,12 @@ interface NativeSdk {
     val sdkVersion: String
     val isConfigured: Boolean
     val attributionResult: WarpLinkDeepLink?
+
+    /** The receipt of the last Tether test code, or `null` when none was read. */
+    val lastTetherTestReceipt: String?
+
+    /** Where the deferred check stands. Sends no request. */
+    val deferredCheckStatus: DeferredCheckStatus
 
     fun isAttributionComplete(): Boolean
 
@@ -37,4 +45,7 @@ interface NativeSdk {
 
     /** Claims the referral behind this install for [installerId]. */
     fun claimReferral(installerId: String, callback: (Result<ReferralClaimResult>) -> Unit)
+
+    /** Reads a Tether code. Android never reads the clipboard, so the answer is `NoClipboard`. */
+    fun readTether(callback: (Result<TetherReadResult>) -> Unit)
 }

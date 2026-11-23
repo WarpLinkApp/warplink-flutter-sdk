@@ -32,13 +32,18 @@ All methods are asynchronous. Native replies on the platform (main) thread. Argu
 | `getAttributionResult` | none | attribution map (section 3.2), or `null` for no match |
 | `isConfigured` | none | `bool` |
 | `isAttributionComplete` | none | `bool` |
-| `getSdkVersion` | none | `String`: the NATIVE SDK constant (`"1.3.0"`), never the pub package version |
+| `getDeferredCheckStatus` | none | deferred check status map (section 3.6). Read-only: it sends no request |
+| `getSdkVersion` | none | `String`: the NATIVE SDK constant (`"1.4.0"`), never the pub package version |
 | `getPendingArrivals` | none | `List<Map>` of ledger entries, oldest first (section 4.3) |
 | `resolveArrival` | `{ "arrivalId": String }` | deep link map, or `null`. Claims the arrival; join semantics (section 4.4) |
 | `claimDelivery` | `{ "arrivalId": String }` | `bool`. `true` to the first claim only (section 4.5) |
 | `redeemInvitation` | `{ "text": String }` | deep link map (section 3.1), or `null` when the text is not a WarpLink invitation or matched nothing (section 3.4) |
 | `claimReferral` | `{ "installerId": String }` | claim map (section 3.3). `status: "none"` is an answer, not an error (section 3.4) |
 | `clearAttribution` | none | `null`. A live key is a no-op success. Failure is `E_NOT_CONFIGURED` before `configure`, or `E_DECODING_ERROR` with the message "Could not clear stored attribution data." when a stored item could not be deleted. Dart owns the deferred check restart for a Test key |
+
+| `readTether` | none | Tether read map (section 3.5). A failure is a normal error reply, `E_NOT_CONFIGURED` before `configure` |
+| `getTetherTestReceipt` | none | `String?`: the receipt of the last test code, or `null` |
+| `isPasteButtonSupported` | none | `bool`. `true` on iOS 16 and later, `false` everywhere else, Android included |
 
 `getInitialUrl` is removed. `getInitialDeepLink` is a Dart operation over the launch arrival (section 10.4); it has no native method.
 
@@ -54,6 +59,8 @@ An unknown method answers `notImplemented`.
 | `linkDomains` | `List<String>` | Forwarded verbatim. Native normalizes (trim, lowercase, URL to host, keep `www.`) and tolerates a non-string element by dropping it |
 | `automaticDeepLinks` | `bool` | Always `false`. Maps to iOS `autoDeepLinkHandling` and Android `automaticDeepLinks`. Native must never call iOS `open` or `continue`, or Android `onNewIntent`, from the plugin |
 | `automaticDeferredDeepLinks` | `bool` | Always `false`. Maps to iOS `autoDeferredCheck` and Android `automaticDeferredDeepLinks`. Dart runs the check itself (section 10.6) |
+
+| `tetherReadMode` | `String` | `paste_button` (default), `automatic` or `on_call`. iOS forwards it to `WarpLinkOptions(tetherReadMode:)`, and an unknown value reads as `paste_button`. Android ignores it. A changed value is a changed native configuration |
 
 `hasOnLink` and `generation` are removed. Native installs no `onLink` sink and writes no `generation`. The generation is Dart-only (section 10.7).
 
@@ -83,7 +90,7 @@ The deep link map and the attribution map also carry six additive evidence keys,
 | Key | Type | Notes |
 |-----|------|-------|
 | `attributionId` | `String?` | Stable id of the attribution. The same on every replay of a match |
-| `matchMethod` | `String?` | `install_token`, `android_referrer`, `device_id`, `link_open`, `probabilistic`. An unknown value reads as `null` in Dart |
+| `matchMethod` | `String?` | `install_token`, `referrer`, `android_referrer`, `device_id`, `link_open`, `probabilistic`. `referrer` and `android_referrer` both read as `MatchMethod.androidReferrer`. An unknown value reads as `null` in Dart |
 | `evidenceClass` | `String?` | `exact`, `estimated`, `legacy_link`. `null` is the safe reading: never treated as exact |
 | `replayState` | `String?` | `original` or `replayed` |
 | `capturedParams` | `Map<String, Object?>` | Link parameters captured at the tap. `{}` when none |
@@ -118,6 +125,34 @@ Native owns the parsing, the token shape, the expiry, the retry store and the cl
 - `redeemInvitation` forwards `text` exactly as the app passed it. A missing `text` is the empty string. The result is the deep link map of the match, or `null`. A refusal (an invalid or expired invitation, a network failure) is a normal error reply (section 5). A 503 pending answer keeps the token on the device, and a later launch retries.
 - `claimReferral` forwards `installerId` as written. Native refuses an id outside 1 to 128 characters with `E_SERVER_ERROR` and status 400. No match is the map with `status: "none"`, never an error. Only a key or network failure is an error.
 - Neither method touches the arrival ledger or the `onLink` fan-out. A redeemed match returns to the caller only.
+
+### 3.5 Tether read
+
+The native SDK owns the clipboard read, the code format and every server decision. The plugin maps the answer. Dart never receives the pasted text.
+
+| `kind` | Other keys |
+|--------|-----------|
+| `matched` | `link`: the deep link map (section 3.1) |
+| `noCode` | `reason`: `paste_not_allowed`, `clipboard_empty`, `in_app_browser`, `expired`, `other_app`, `link_ended` or `older_sdk`, or `null` |
+| `unusable` | none |
+| `test` | `receipt`: `String?` |
+
+Dart reads a map it cannot decode as `unusable`: a non-map, an unknown `kind`, or `matched` without a `link` map. An unknown `reason` and an empty or non-string `receipt` read as `null`. `readTether` and the paste button never touch the arrival ledger or the `onLink` fan-out. A match is stored by the native SDK as the attribution result.
+
+Android answers `{ "kind": "noCode", "reason": null }` on the main thread and reads no clipboard.
+
+**Paste button platform view.** Type `app.warplink/flutter/paste_button`, standard codec creation params `baseBackgroundColor` and `baseForegroundColor` (`int?` ARGB), `cornerStyle` (`dynamic`, `fixed`, `small`, `medium`, `large`, `capsule`) and `displayMode` (`iconAndLabel`, `iconOnly`, `labelOnly`). Each view reports on its own method channel `app.warplink/flutter/paste_button/<viewId>`, method `onTether`, body `{ "result": <section 3.5 map> }` or `{ "error": { "code", "message" } }`. The view sets only the native `onTether` callback, so it never accepts an older invitation text. Only iOS 16 and later registers a button, and the control style is fixed at creation, so Dart makes a new view when a style value changes.
+
+### 3.6 Deferred check status
+
+The native SDK owns the status. The plugin reads `WarpLink.deferredCheckStatus` and maps it. It sends no request and starts no check.
+
+| Key | Type | Meaning |
+|-----|------|---------|
+| `state` | `String` | `notChecked`, `checking`, `matched`, `noMatch`, `waiting`, `skippedOldInstall` or `stopped` |
+| `retryAt` | `int` | Epoch milliseconds when the next check is allowed. Present for `waiting` only |
+
+Dart reads a reply it cannot decode as a `WarpLinkDecodingException`: a non-map, an unknown `state`, or `waiting` without a numeric `retryAt`. Before `configure` native answers `notChecked`.
 
 ## 4. Arrivals
 
@@ -255,7 +290,9 @@ An independent manual request, outside the ledger. It is never part of an arriva
 
 ### 10.6 Deferred check
 
-Dart runs the check itself; native is configured with `automaticDeferredDeepLinks: false`. A match reaches `onLink` once. A no-match delivers nothing. A failure reaches `onLink` as an error and leaves native's once-per-install gate open, so the next launch retries. Overlapping configurations share one check, and the answer goes to the newest configuration.
+Dart runs the check itself; native is configured with `automaticDeferredDeepLinks: false`. A match reaches `onLink` once. A no-match delivers nothing. A failure reaches `onLink` as an error and leaves native's once-per-install gate open, so a later launch tries again. Overlapping configurations share one check, and the answer goes to the newest configuration.
+
+A `configure` with the same key and options as the live session keeps that session: native is not configured again, and only `onLink` is replaced. When a check already started and finished or failed, Dart reads `getDeferredCheckStatus`. For `matched`, `noMatch` and `checking` it does nothing more. For every other state, including `waiting`, `skippedOldInstall` and `stopped`, it calls `checkDeferredDeepLink` once, and the native backoff and the age and give-up limits decide whether a request goes out. Dart makes this call at most once a minute per process, for any key, and counts the minute from the last call that asked. A clock that moves backwards starts a new minute. A `wl_test_` key never reports a held-back state, so it asks whenever the minute allows.
 
 ### 10.7 Generation
 
@@ -309,6 +346,8 @@ Recipients are decided only inside handlers, from the current state, never from 
 
 ## 13. Contract change log
 
+- Revision 6, deferred check status (SDK 1.4.0): added `getDeferredCheckStatus` (section 2) and the status map (section 3.6). A same-key repeat `configure` asks for one more check when native says the check is not finished or running (section 10.6). No error code is added.
+- Revision 5, Tether handoff (SDK 1.4.0): added `readTether`, `getTetherTestReceipt` and `isPasteButtonSupported` (section 2), the `tetherReadMode` configure argument (section 2.1), and the Tether read map and paste button view (section 3.5). No error code is added.
 - Revision 4, attribution reset (SDK 1.3.0): added `clearAttribution` (section 2). No error code is added.
 - Revision 3, referral handoff (SDK 1.2.0): added `redeemInvitation` and `claimReferral` (section 2), the six evidence keys on the deep link and attribution maps (section 3.1), the claim map (section 3.3) and the rules for both methods (section 3.4).
 

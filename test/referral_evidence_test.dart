@@ -111,6 +111,18 @@ void main() {
       });
     }
 
+    test('WL-S46 the server name referrer reads as the install referrer', () {
+      final link = WarpLinkDeepLink.fromMap(
+        matchMap(overrides: {'matchMethod': 'referrer'}),
+      );
+
+      expect(link.matchMethod, MatchMethod.androidReferrer);
+      expect(
+        MatchMethod.fromWire('referrer'),
+        MatchMethod.fromWire('android_referrer'),
+      );
+    });
+
     test('WL-S46 a missing class is never upgraded to exact', () {
       final link = WarpLinkDeepLink.fromMap(
         matchMap(overrides: {'evidenceClass': null}),

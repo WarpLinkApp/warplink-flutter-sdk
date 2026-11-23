@@ -6,6 +6,7 @@ import 'package:warplink_flutter/src/dispatch_config.dart';
 import 'package:warplink_flutter/src/errors.dart';
 import 'package:warplink_flutter/src/events.dart';
 import 'package:warplink_flutter/src/link_runtime.dart';
+import 'package:warplink_flutter/src/tether/tether_enums.dart';
 
 /// The body of `WarpLink.configure`: see its documentation.
 ///
@@ -19,6 +20,7 @@ Future<void> configureSdk(
   required List<String> linkDomains,
   required bool automaticDeepLinks,
   required bool automaticDeferredDeepLinks,
+  required TetherReadMode tetherReadMode,
   required WarpLinkListener? onLink,
 }) async {
   if (!isValidApiKey(apiKey)) {
@@ -36,16 +38,28 @@ Future<void> configureSdk(
   if (previousKey != null && previousKey != apiKey) {
     runtime.deferred.discard();
   }
+  final arguments = <String, Object?>{
+    'apiKey': apiKey,
+    'apiEndpoint': apiEndpoint,
+    'debugLogging': debugLogging,
+    'linkDomains': List<String>.of(linkDomains),
+    'automaticDeepLinks': false,
+    'automaticDeferredDeepLinks': false,
+    'tetherReadMode': tetherReadMode.wireValue,
+  };
+  // The same key and options again is the session already running: native is
+  // not configured and no second session starts. `onLink` is replaced, and an
+  // unfinished check gets one more chance.
+  final isRepeat = runtime.nativeSession.isRepeat(arguments);
+  if (!isRepeat) {
+    runtime.deferred.startSession();
+  }
   runtime.arrivals.begin(config);
   try {
-    await runtime.channel.invoke(WarpLinkMethod.configure, <String, Object?>{
-      'apiKey': apiKey,
-      'apiEndpoint': apiEndpoint,
-      'debugLogging': debugLogging,
-      'linkDomains': List<String>.of(linkDomains),
-      'automaticDeepLinks': false,
-      'automaticDeferredDeepLinks': false,
-    });
+    await runtime.nativeSession.configure(
+      arguments,
+      () => runtime.channel.invoke(WarpLinkMethod.configure, arguments),
+    );
   } on WarpLinkException catch (error) {
     runtime.arrivals.markConfigured(config, ok: false);
     if (onLink == null) rethrow;
@@ -53,5 +67,5 @@ Future<void> configureSdk(
     return;
   }
   runtime.arrivals.markConfigured(config, ok: true);
-  unawaited(runtime.dispatchAutomatic(config));
+  unawaited(runtime.dispatchAutomatic(config, repeat: isRepeat));
 }

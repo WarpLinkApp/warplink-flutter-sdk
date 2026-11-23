@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:warplink_flutter/warplink_flutter.dart';
+import 'package:warplink_flutter_example/tether_demo.dart';
 
 // Replace with an SDK key from Keys > SDK keys in the dashboard.
 const String _sdkKey = 'wl_live_00000000000000000000000000000000';
@@ -30,10 +31,18 @@ class ExampleApp extends StatelessWidget {
       home: Scaffold(
         appBar: AppBar(title: const Text('WarpLink example')),
         body: Center(
-          child: FutureBuilder<String>(
-            future: WarpLink.sdkVersion(),
-            builder: (context, snapshot) =>
-                Text('Native SDK: ${snapshot.data ?? snapshot.error ?? '...'}'),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            spacing: 24,
+            children: [
+              FutureBuilder<String>(
+                future: WarpLink.sdkVersion(),
+                builder: (context, snapshot) => Text(
+                  'Native SDK: ${snapshot.data ?? snapshot.error ?? '...'}',
+                ),
+              ),
+              const TetherDemo(),
+            ],
           ),
         ),
       ),

@@ -12,7 +12,7 @@ let package = Package(
     ],
     dependencies: [
         .package(name: "FlutterFramework", path: "../FlutterFramework"),
-        .package(url: "https://github.com/WarpLinkApp/warplink-ios-sdk.git", from: "1.3.0")
+        .package(url: "https://github.com/WarpLinkApp/warplink-ios-sdk.git", from: "1.4.0")
     ],
     targets: [
         .target(

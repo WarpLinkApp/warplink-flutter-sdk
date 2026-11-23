@@ -121,7 +121,11 @@ void main() {
       await pump();
       final secondConfigure = Completer<Object?>();
       native.handlers['configure'] = (_) => secondConfigure.future;
-      final done = configure(newer);
+      final done = WarpLink.configure(
+        apiKey: validKey,
+        debugLogging: true,
+        onLink: newer.add,
+      );
       await pump();
       gate.complete();
       await pump();

@@ -4,11 +4,14 @@ import 'package:warplink_flutter/src/attribution_result.dart';
 import 'package:warplink_flutter/src/channel.dart';
 import 'package:warplink_flutter/src/configure_flow.dart';
 import 'package:warplink_flutter/src/deep_link.dart';
-import 'package:warplink_flutter/src/errors.dart';
+import 'package:warplink_flutter/src/deferred_check_status.dart';
 import 'package:warplink_flutter/src/events.dart';
 import 'package:warplink_flutter/src/link_runtime.dart';
 import 'package:warplink_flutter/src/platform_support.dart';
 import 'package:warplink_flutter/src/referral/referral_claim_result.dart';
+import 'package:warplink_flutter/src/sdk_calls.dart';
+import 'package:warplink_flutter/src/tether/tether_enums.dart';
+import 'package:warplink_flutter/src/tether/tether_read_result.dart';
 
 /// Default endpoint of the WarpLink API.
 const String defaultApiEndpoint = 'https://api.warplink.app/v1';
@@ -20,6 +23,7 @@ const String defaultApiEndpoint = 'https://api.warplink.app/v1';
 /// Android only; other platforms throw [UnsupportedError].
 abstract final class WarpLink {
   static LinkRuntime _runtime = LinkRuntime(WarpLinkChannel());
+  static SdkCalls _calls = SdkCalls(_runtime.channel);
 
   /// Initializes the SDK.
   ///
@@ -36,11 +40,16 @@ abstract final class WarpLink {
   /// `false` to wire links yourself with [onDeepLink] and
   /// [getInitialDeepLink]. [automaticDeferredDeepLinks] runs the install
   /// attribution check after the launch link. [linkDomains] lists extra hosts
-  /// that serve your links, on top of `aplnk.to`.
+  /// that serve your links, on top of `aplnk.to`. [tetherReadMode] says how
+  /// the SDK gets a Tether code from the clipboard; the default never reads it
+  /// by itself. See [readTether].
   ///
   /// The future completes when native configuration does, without waiting for
-  /// the launch link or the deferred check. Calling `configure` again replaces
-  /// the earlier configuration and callback.
+  /// the launch link or the deferred check. Calling `configure` again with
+  /// other options replaces the earlier configuration and callback. With the
+  /// same key and options it keeps the session, replaces only the callback,
+  /// and gives an unfinished check one more chance, at most once a minute. The
+  /// native SDK decides whether that sends a request.
   static Future<void> configure({
     required String apiKey,
     String apiEndpoint = defaultApiEndpoint,
@@ -48,6 +57,7 @@ abstract final class WarpLink {
     List<String> linkDomains = const <String>[],
     bool automaticDeepLinks = true,
     bool automaticDeferredDeepLinks = true,
+    TetherReadMode tetherReadMode = TetherReadMode.pasteButton,
     WarpLinkListener? onLink,
   }) async {
     requireSupportedPlatform();
@@ -59,6 +69,7 @@ abstract final class WarpLink {
       linkDomains: linkDomains,
       automaticDeepLinks: automaticDeepLinks,
       automaticDeferredDeepLinks: automaticDeferredDeepLinks,
+      tetherReadMode: tetherReadMode,
       onLink: onLink,
     );
   }
@@ -74,17 +85,13 @@ abstract final class WarpLink {
 
   /// Runs the deferred deep link check. Returns the stored result once
   /// attribution completed, and `null` for a confirmed no-match.
-  static Future<WarpLinkDeepLink?> checkDeferredDeepLink() async {
-    final raw = await _call(WarpLinkMethod.checkDeferredDeepLink);
-    return raw == null ? null : WarpLinkDeepLink.fromMap(raw);
-  }
+  static Future<WarpLinkDeepLink?> checkDeferredDeepLink() =>
+      _calls.link(WarpLinkMethod.checkDeferredDeepLink);
 
   /// Reads the stored install attribution result, or `null` for no match.
   /// Throws [WarpLinkNotConfiguredException] before [configure].
-  static Future<AttributionResult?> getAttributionResult() async {
-    final raw = await _call(WarpLinkMethod.getAttributionResult);
-    return raw == null ? null : AttributionResult.fromMap(raw);
-  }
+  static Future<AttributionResult?> getAttributionResult() =>
+      _calls.attributionResult();
 
   /// Redeems the invitation in [text], which the person pasted.
   ///
@@ -95,10 +102,8 @@ abstract final class WarpLink {
   /// message says how to open the link again. After a
   /// [WarpLinkNetworkException] the native SDK keeps the invitation and tries
   /// again on a later launch, a bounded number of times.
-  static Future<WarpLinkDeepLink?> redeemInvitation(String text) async {
-    final raw = await _call(WarpLinkMethod.redeemInvitation, {'text': text});
-    return raw == null ? null : WarpLinkDeepLink.fromMap(raw);
-  }
+  static Future<WarpLinkDeepLink?> redeemInvitation(String text) =>
+      _calls.link(WarpLinkMethod.redeemInvitation, {'text': text});
 
   /// Claims the referral behind this install for the new signup.
   ///
@@ -107,27 +112,37 @@ abstract final class WarpLink {
   /// [ReferralClaimStatus.none] is an answer, not an error. The call throws
   /// when it cannot reach the server, the key is refused, or [installerId] is
   /// empty or too long.
-  static Future<ReferralClaimResult> claimReferral(String installerId) async {
-    final raw = await _call(WarpLinkMethod.claimReferral, {
-      'installerId': installerId,
-    });
-    return ReferralClaimResult.fromMap(raw);
-  }
+  static Future<ReferralClaimResult> claimReferral(String installerId) =>
+      _calls.claimReferral(installerId);
 
-  /// The version the native SDK sends on the wire, for example `1.3.0`.
-  static Future<String> sdkVersion() async {
-    final raw = await _call(WarpLinkMethod.getSdkVersion);
-    if (raw is String) {
-      return raw;
-    }
-    throw const WarpLinkDecodingException('Native SDK version is not a string');
-  }
+  /// Reads the clipboard once and sends a Tether code, if one is there.
+  ///
+  /// Use it with `TetherReadMode.onCall`. On iOS the system may show its paste
+  /// alert. Android reads nothing and returns [TetherNoCode] with a `null`
+  /// reason. A match is also stored as the attribution result, and goes to
+  /// `onLink` when it replaces a link `onLink` already received, such as the
+  /// first-launch estimate. A failure throws a [WarpLinkException], a
+  /// [WarpLinkNotConfiguredException] before [configure].
+  static Future<TetherReadResult> readTether() => _calls.readTether();
+
+  /// The receipt of the last test code (`wl1t_`) the server accepted, or
+  /// `null`. It holds a value only with a `wl_test_` key.
+  static Future<String?> lastTetherTestReceipt() =>
+      _calls.lastTetherTestReceipt();
+
+  /// The version the native SDK sends on the wire, for example `1.4.0`.
+  static Future<String> sdkVersion() => _calls.sdkVersion();
 
   /// Whether install attribution has completed for this install.
-  static Future<bool> isAttributionComplete() async {
-    final raw = await _call(WarpLinkMethod.isAttributionComplete);
-    return raw == true;
-  }
+  static Future<bool> isAttributionComplete() =>
+      _calls.flag(WarpLinkMethod.isAttributionComplete);
+
+  /// Where the first-launch link check stands, so a skipped check reads
+  /// differently from one that found no match. Sends no request and survives a
+  /// relaunch. [DeferredCheckState.waiting] carries `retryAt`. A `wl_test_`
+  /// key never reports `waiting`, `skippedOldInstall` or `stopped`.
+  static Future<DeferredCheckStatus> getDeferredCheckStatus() =>
+      _calls.deferredCheckStatus();
 
   /// Forgets this install's attribution so the next first launch can be tested
   /// again: the cached match, the completed and attempted gates, and any held
@@ -139,29 +154,21 @@ abstract final class WarpLink {
   ///
   /// Throws [WarpLinkNotConfiguredException] before [configure], and
   /// [WarpLinkDecodingException], with the message "Could not clear stored
-  /// attribution data.", when a stored item could not be deleted. Calling again
-  /// is safe.
+  /// attribution data.", when a stored item could not be deleted. Calling
+  /// again is safe.
   static Future<void> clearAttribution() async {
     requireSupportedPlatform();
     return clearAttributionOf(_runtime);
   }
 
   /// Whether [configure] succeeded. `false` after a rejected key format.
-  static Future<bool> isConfigured() async {
-    final raw = await _call(WarpLinkMethod.isConfigured);
-    return raw == true;
-  }
+  static Future<bool> isConfigured() =>
+      _calls.flag(WarpLinkMethod.isConfigured);
 
   /// Whether [url] belongs to a known WarpLink domain.
   ///
   /// An unparsable string returns `false`.
-  static Future<bool> isWarpLinkUrl(String url) async {
-    try {
-      return await _call(WarpLinkMethod.isWarpLinkUrl, {'url': url}) == true;
-    } on WarpLinkException {
-      return false;
-    }
-  }
+  static Future<bool> isWarpLinkUrl(String url) => _calls.isWarpLinkUrl(url);
 
   /// Every URL the host app receives while it runs, resolved, for manual
   /// wiring.
@@ -177,25 +184,17 @@ abstract final class WarpLink {
   /// callback the launch link goes to `onLink` and this returns `null`.
   static Future<WarpLinkDeepLink?> getInitialDeepLink() async {
     requireSupportedPlatform();
-    return switch (await _runtime.arrivals.takeInitial()) {
-      LinkEvent(:final deepLink) => deepLink,
-      ErrorEvent(:final error) => throw error,
-      null => null,
-    };
+    return _runtime.takeInitialLink();
   }
 
   /// Replaces the channel and clears state. For tests only.
   @visibleForTesting
-  static Future<void> resetForTesting([WarpLinkChannel? channel]) async {
-    await _runtime.arrivals.dispose();
-    _runtime = LinkRuntime(channel ?? WarpLinkChannel());
-  }
-
-  static Future<Object?> _call(
-    String method, [
-    Map<String, Object?>? arguments,
+  static Future<void> resetForTesting([
+    WarpLinkChannel? channel,
+    DateTime Function() now = DateTime.now,
   ]) async {
-    requireSupportedPlatform();
-    return _runtime.channel.invoke(method, arguments);
+    await _runtime.arrivals.dispose();
+    _runtime = LinkRuntime(channel ?? WarpLinkChannel(), now: now);
+    _calls = SdkCalls(_runtime.channel);
   }
 }
